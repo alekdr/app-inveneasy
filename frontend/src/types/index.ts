@@ -114,5 +114,62 @@ export interface WishlistItem {
   updated_at: string
 }
 
+// ===== Calendario =====
+export type CalendarEventType =
+  | 'Evento'
+  | 'Recordatorio'
+  | 'Tarea'
+  | 'Urgente'
+  | 'Importante'
+  | 'Meta'
+  | 'Idea'
+
+export interface CalendarEvent {
+  id: string
+  user_id: string
+  title: string
+  description: string | null
+  event_date: string // YYYY-MM-DD
+  event_time: string | null // HH:MM
+  event_type: CalendarEventType
+  is_completed: boolean
+  created_at: string
+  updated_at: string
+}
+
+// ===== Hábitos (Mogged) =====
+export interface Habit {
+  id: string
+  user_id: string
+  name: string
+  icon_name: string
+  color: string
+  frequency: 'daily' | 'weekdays' | 'weekends' | 'custom'
+  reminder_time: string | null
+  is_measurable: boolean
+  target_value: number
+  unit: string | null
+  current_streak: number
+  best_streak: number
+  is_active: boolean
+  created_at: string
+}
+
+export interface HabitLog {
+  id: string
+  habit_id: string
+  user_id: string
+  log_date: string
+  progress_value: number
+  status: 'completed' | 'skipped' | 'pending'
+  updated_at: string
+}
+
+export interface HabitWithProgress extends Habit {
+  status: 'completed' | 'skipped' | 'pending'
+  progress_value: number
+  logId?: string
+}
+
 // ===== Navigation =====
 export type TabId = 'home' | 'closet' | 'routines' | 'finances' | 'habits' | 'calendar' | 'wishlist'

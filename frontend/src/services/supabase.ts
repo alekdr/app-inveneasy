@@ -251,3 +251,181 @@ export async function deleteWishlistItem(id: string) {
   if (error) throw error
   return true
 }
+
+// ===== Servicios de Calendario =====
+
+export async function fetchCalendarEvents(startDate: string, endDate: string) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
+
+  const { data, error } = await supabase
+    .from('calendar_events')
+    .select('*')
+    .eq('user_id', user.id)
+    .gte('event_date', startDate)
+    .lte('event_date', endDate)
+    .order('event_time', { ascending: true, nullsFirst: false })
+
+  if (error) throw error
+  return data
+}
+
+export async function createCalendarEvent(event: {
+  title: string
+  description?: string
+  event_date: string
+  event_time?: string
+  event_type: string
+}) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Usuario no autenticado')
+
+  const { data, error } = await supabase
+    .from('calendar_events')
+    .insert({
+      user_id: user.id,
+      title: event.title,
+      description: event.description || null,
+      event_date: event.event_date,
+      event_time: event.event_time || null,
+      event_type: event.event_type,
+    })
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+export async function updateCalendarEvent(id: string, updates: Partial<{
+  title: string
+  description: string
+  event_date: string
+  event_time: string | null
+  event_type: string
+  is_completed: boolean
+}>) {
+  const { data, error } = await supabase
+    .from('calendar_events')
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+export async function deleteCalendarEvent(id: string) {
+  const { error } = await supabase
+    .from('calendar_events')
+    .delete()
+    .eq('id', id)
+
+  if (error) throw error
+  return true
+}
+
+// ===== Servicios de Hábitos (Mogged) =====
+
+export async function fetchHabits(dateStr: string) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
+
+  const { data: habits, error: habitsError } = await supabase
+    .from('habits')
+    .select('*')
+    .eq('user_id', user.id)
+    .eq('is_active', true)
+    .order('created_at', { ascending: true })
+
+  if (habitsError) throw habitsError
+
+  const { data: logs, error: logsError } = await supabase
+    .from('habit_logs')
+    .select('*')
+    .eq('user_id', user.id)
+    .eq('log_date', dateStr)
+
+  if (logsError) throw logsError
+
+  return (habits || []).map((h) => {
+    const log = logs?.find((l) => l.habit_id === h.id)
+    return {
+      ...h,
+      status: log?.status || 'pending',
+      progress_value: Number(log?.progress_value || 0),
+      logId: log?.id,
+    }
+  })
+}
+
+export async function createHabit(habit: {
+  name: string
+  color?: string
+  frequency?: string
+  reminder_time?: string
+  is_measurable?: boolean
+  target_value?: number
+  unit?: string
+}) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Usuario no autenticado')
+
+  const { data, error } = await supabase
+    .from('habits')
+    .insert({
+      user_id: user.id,
+      name: habit.name,
+      color: habit.color || '#6b5ce7',
+      frequency: habit.frequency || 'daily',
+      reminder_time: habit.reminder_time || null,
+      is_measurable: habit.is_measurable || false,
+      target_value: habit.target_value || 1,
+      unit: habit.unit || null,
+    })
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+export async function logHabitProgress(
+  habitId: string,
+  dateStr: string,
+  status: 'completed' | 'skipped' | 'pending',
+  progressValue: number
+) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Usuario no autenticado')
+
+  const { data, error } = await supabase
+    .from('habit_logs')
+    .upsert(
+      {
+        habit_id: habitId,
+        user_id: user.id,
+        log_date: dateStr,
+        status,
+        progress_value: progressValue,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'habit_id,log_date' }
+    )
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+export async function deleteHabit(habitId: string) {
+  const { error } = await supabase
+    .from('habits')
+    .delete()
+    .eq('id', habitId)
+
+  if (error) throw error
+  return true
+}
