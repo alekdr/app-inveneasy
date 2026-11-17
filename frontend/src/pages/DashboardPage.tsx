@@ -69,7 +69,7 @@ export default function DashboardPage() {
       <div className="rounded-3xl border border-[#eeece8] bg-white p-6 md:p-8 shadow-xs dark:border-[#222226] dark:bg-[#18181b]">
         <div className="flex flex-col gap-2 max-w-xl">
           <span className="text-[11px] font-bold uppercase tracking-widest text-slate-400">
-            Resumen general
+            InvenEasy
           </span>
           <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
             Hola de nuevo

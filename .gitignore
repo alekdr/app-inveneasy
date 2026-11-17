@@ -18,7 +18,11 @@ frontend/.env.local
 
 # Build outputs
 frontend/dist/
-frontend/android/
+
+# Android signing keys (never commit private keys)
+*.keystore
+*.jks
+*.p12
 
 # IDE
 .vscode/

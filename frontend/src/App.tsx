@@ -1,9 +1,11 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useEffect } from 'react'
 import { useAuthStore } from './stores/authStore'
+import { initCapgo } from './services/capgo'
 
 // Layout
 import AppLayout from './components/AppLayout'
+import UpdateBanner from './components/UpdateBanner'
 
 // Pages
 import DashboardPage from './pages/DashboardPage'
@@ -24,6 +26,7 @@ function App() {
 
   useEffect(() => {
     initialize()
+    initCapgo()
   }, [initialize])
 
   if (!initialized) {
@@ -39,6 +42,7 @@ function App() {
 
   return (
     <BrowserRouter>
+      <UpdateBanner />
       <Routes>
         {/* Auth (sin layout) */}
         <Route path="/auth" element={!user ? <AuthPage /> : <Navigate to="/" />} />

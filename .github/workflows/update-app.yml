@@ -1,0 +1,68 @@
+name: Deploy OTA Update (Capgo)
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'frontend/src/**'
+      - 'frontend/public/**'
+      - 'frontend/index.html'
+      - 'frontend/vite.config.ts'
+    paths-ignore:
+      - 'frontend/android/**'
+      - 'frontend/capacitor.config.ts'
+      - 'frontend/package.json'
+      - 'frontend/package-lock.json'
+      - '.github/workflows/build-apk.yml'
+      - 'backend/**'
+      - 'database/**'
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: 'Canal de distribución en Capgo'
+        required: true
+        default: 'production'
+        type: string
+
+jobs:
+  ota-update:
+    name: Publicar Actualización OTA en Capgo
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Clonar repositorio
+        uses: actions/checkout@v4
+
+      - name: 🟢 Configurar Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: 📦 Instalar dependencias
+        working-directory: frontend
+        run: npm ci
+
+      - name: 🔨 Compilar aplicación React (Vite)
+        working-directory: frontend
+        run: npm run build
+
+      - name: 🚀 Subir Bundle a Capgo (OTA)
+        working-directory: frontend
+        env:
+          CAPGO_TOKEN: ${{ secrets.CAPGO_TOKEN }}
+        run: |
+          if [ -z "$CAPGO_TOKEN" ]; then
+            echo "❌ Error: El secret CAPGO_TOKEN no está configurado en el repositorio de GitHub."
+            echo "Ve a Configuración de tu repositorio > Secrets and variables > Actions y agrega CAPGO_TOKEN."
+            exit 1
+          fi
+          
+          CHANNEL="${{ inputs.channel || 'production' }}"
+          echo "Publicando actualización en el canal: $CHANNEL..."
+          npx @capgo/cli bundle upload \
+            --apikey "$CAPGO_TOKEN" \
+            --channel "$CHANNEL" \
+            --path dist

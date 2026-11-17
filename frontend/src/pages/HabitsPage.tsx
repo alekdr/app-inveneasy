@@ -235,8 +235,8 @@ export default function HabitsPage() {
 
       {/* Aviso de Racha en Peligro (si quedan hábitos pendientes del día) */}
       {pendingHabits.length > 0 && total > 0 && (
-        <div className="flex items-center gap-2.5 rounded-2xl border border-amber-200/80 bg-amber-50/70 p-3.5 text-xs text-amber-800 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-300">
-          <WarningIcon size={18} className="text-amber-500 shrink-0" />
+        <div className="flex items-center gap-2.5 rounded-2xl border border-rose-200/80 bg-rose-50/70 p-3.5 text-xs text-rose-800 dark:border-rose-900/40 dark:bg-rose-950/20 dark:text-rose-300">
+          <WarningIcon size={18} className="text-rose-500 shrink-0" />
           <p className="font-semibold">
             ¡Tienes {pendingHabits.length} hábito{pendingHabits.length > 1 ? 's' : ''} pendiente{pendingHabits.length > 1 ? 's' : ''} hoy! Complétalos para no arriesgar tu racha.
           </p>
@@ -268,33 +268,30 @@ export default function HabitsPage() {
               <div
                 key={habit.id}
                 onClick={() => handleToggleComplete(habit)}
-                className={`group flex cursor-pointer items-center justify-between rounded-2xl border p-4 transition-all ${
-                  isCompleted
-                    ? 'border-emerald-200 bg-emerald-50/30 dark:border-emerald-900/40 dark:bg-emerald-950/10'
-                    : isSkipped
+                className={`group flex cursor-pointer items-center justify-between rounded-2xl border p-4 transition-all ${isCompleted
+                  ? 'border-emerald-200 bg-emerald-50/30 dark:border-emerald-900/40 dark:bg-emerald-950/10'
+                  : isSkipped
                     ? 'border-slate-200 bg-slate-50/50 opacity-60 dark:border-slate-800 dark:bg-slate-800/40'
                     : 'border-slate-200/80 bg-white hover:border-slate-300 shadow-xs dark:border-slate-800 dark:bg-slate-900'
-                }`}
+                  }`}
               >
                 <div className="flex items-center gap-3.5">
                   {/* Círculo Check */}
                   <div
-                    className={`flex h-7 w-7 items-center justify-center rounded-xl border transition-all ${
-                      isCompleted
-                        ? 'border-emerald-500 bg-emerald-500 text-white'
-                        : isSkipped
+                    className={`flex h-7 w-7 items-center justify-center rounded-xl border transition-all ${isCompleted
+                      ? 'border-emerald-500 bg-emerald-500 text-white'
+                      : isSkipped
                         ? 'border-slate-300 bg-slate-200 text-slate-500 dark:border-slate-700 dark:bg-slate-800'
                         : 'border-slate-300 bg-white text-transparent hover:border-emerald-500 dark:border-slate-700 dark:bg-slate-900'
-                    }`}
+                      }`}
                   >
                     <Check size={16} />
                   </div>
 
                   <div>
                     <h4
-                      className={`text-sm font-bold tracking-tight text-slate-900 dark:text-white ${
-                        isCompleted ? 'line-through text-slate-400 dark:text-slate-500' : ''
-                      }`}
+                      className={`text-sm font-bold tracking-tight text-slate-900 dark:text-white ${isCompleted ? 'line-through text-slate-400 dark:text-slate-500' : ''
+                        }`}
                     >
                       {habit.name}
                     </h4>
