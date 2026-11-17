@@ -9,14 +9,6 @@ on:
       - 'frontend/public/**'
       - 'frontend/index.html'
       - 'frontend/vite.config.ts'
-    paths-ignore:
-      - 'frontend/android/**'
-      - 'frontend/capacitor.config.ts'
-      - 'frontend/package.json'
-      - 'frontend/package-lock.json'
-      - '.github/workflows/build-apk.yml'
-      - 'backend/**'
-      - 'database/**'
   workflow_dispatch:
     inputs:
       channel:
