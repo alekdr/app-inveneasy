@@ -50,6 +50,9 @@ jobs:
 
       - name: 🔨 Compilar aplicación React (Vite)
         working-directory: frontend
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://wpanurtrwzenzembfivt.supabase.co' }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY || 'sb_publishable_kKQoyKCvm_GUNUMdbpI2MA_Zb3FKR24' }}
         run: npm run build
 
       - name: 🔄 Sincronizar Capacitor con Android

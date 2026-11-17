@@ -10,7 +10,7 @@ const config: CapacitorConfig = {
   },
   plugins: {
     CapacitorUpdater: {
-      autoUpdate: true,
+      autoUpdate: 'atBackground',
       channel: 'production',
       resetWhenUpdate: true,
       autoDeleteFailed: true,

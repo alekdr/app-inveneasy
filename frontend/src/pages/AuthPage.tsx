@@ -35,7 +35,18 @@ export default function AuthPage() {
       }
       navigate('/')
     } catch (err: any) {
-      setError(err.message || 'Error de autenticación')
+      const msg = err?.message || ''
+      if (msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.toLowerCase().includes('fetch')) {
+        setError('No se pudo conectar con el servidor. Verifica tu conexión a internet o los servicios de Supabase.')
+      } else if (msg.includes('Invalid login credentials')) {
+        setError('Correo o contraseña incorrectos.')
+      } else if (msg.includes('User already registered')) {
+        setError('Este correo electrónico ya está registrado.')
+      } else if (msg.includes('Password should be at least')) {
+        setError('La contraseña debe tener al menos 6 caracteres.')
+      } else {
+        setError(msg || 'Error de autenticación')
+      }
     }
   }
 

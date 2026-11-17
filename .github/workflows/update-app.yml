@@ -39,6 +39,9 @@ jobs:
 
       - name: 🔨 Compilar aplicación React (Vite)
         working-directory: frontend
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://wpanurtrwzenzembfivt.supabase.co' }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY || 'sb_publishable_kKQoyKCvm_GUNUMdbpI2MA_Zb3FKR24' }}
         run: npm run build
 
       - name: 🚀 Subir Bundle a Capgo (OTA)
@@ -54,7 +57,9 @@ jobs:
           
           CHANNEL="${{ inputs.channel || 'production' }}"
           echo "Publicando actualización en el canal: $CHANNEL..."
-          npx @capgo/cli bundle upload \
+          npx @capgo/cli bundle upload com.inven.easy \
             --apikey "$CAPGO_TOKEN" \
             --channel "$CHANNEL" \
-            --path dist
+            --path dist \
+            --auto-bump \
+            --fail-on-incompatible
