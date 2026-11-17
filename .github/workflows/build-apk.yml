@@ -30,11 +30,11 @@ jobs:
       - name: 📥 Clonar repositorio
         uses: actions/checkout@v4
 
-      - name: ☕ Configurar JDK 17
+      - name: ☕ Configurar JDK 21 (Temurin)
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '21'
           cache: 'gradle'
 
       - name: Setup Node.js
@@ -87,6 +87,13 @@ jobs:
       - name: ⚙️ Dar permisos de ejecución a Gradlew
         working-directory: frontend/android
         run: chmod +x gradlew
+
+      - name: 🔍 Verificar entorno Java y Gradle
+        working-directory: frontend/android
+        run: |
+          echo "JAVA_HOME=$JAVA_HOME"
+          java -version
+          ./gradlew -version
 
       - name: 🚀 Compilar APK Release Firmado
         if: steps.check-signing.outputs.has_signing == 'true'
