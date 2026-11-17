@@ -65,7 +65,7 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-7">
-      {/* Editorial Welcome Header */}
+      {/* Editorial Welcome Header - InvenEasy Clean Dashboard */}
       <div className="rounded-3xl border border-[#eeece8] bg-white p-6 md:p-8 shadow-xs dark:border-[#222226] dark:bg-[#18181b]">
         <div className="flex flex-col gap-2 max-w-xl">
           <span className="text-[11px] font-bold uppercase tracking-widest text-slate-400">
