@@ -56,11 +56,29 @@ jobs:
         working-directory: frontend
         run: npx cap sync android
 
-      - name: 🔐 Preparar Keystore de Producción (si existe secret)
-        working-directory: frontend/android/app
-        if: env.HAS_KEYSTORE == 'true'
+      - name: 🔍 Comprobar configuración de firma
+        id: check-signing
         env:
-          HAS_KEYSTORE: ${{ secrets.KEYSTORE_BASE64 != '' }}
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          BUILD_TYPE_INPUT: ${{ inputs.build_type }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ] && [ -n "$KEYSTORE_PASSWORD" ] && [ -n "$KEY_ALIAS" ] && [ -n "$KEY_PASSWORD" ] && [ "$BUILD_TYPE_INPUT" != "debug" ]; then
+            echo "has_signing=true" >> "$GITHUB_OUTPUT"
+            echo "apk_mode=release" >> "$GITHUB_OUTPUT"
+            echo "✅ Configuración de firma completa detectada. Se compilará Release firmado."
+          else
+            echo "has_signing=false" >> "$GITHUB_OUTPUT"
+            echo "apk_mode=debug" >> "$GITHUB_OUTPUT"
+            echo "ℹ️ Configuración de firma no configurada o modo debug solicitado. Se compilará Debug instalable."
+          fi
+
+      - name: 🔐 Preparar Keystore de Producción
+        if: steps.check-signing.outputs.has_signing == 'true'
+        working-directory: frontend/android/app
+        env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
         run: |
           echo "Decodificando Keystore de producción..."
@@ -70,30 +88,32 @@ jobs:
         working-directory: frontend/android
         run: chmod +x gradlew
 
-      - name: 🚀 Compilar APK con Gradle (Release)
+      - name: 🚀 Compilar APK Release Firmado
+        if: steps.check-signing.outputs.has_signing == 'true'
         working-directory: frontend/android
         env:
-          KEYSTORE_PATH: ${{ secrets.KEYSTORE_BASE64 != '' && 'release.keystore' || '' }}
+          KEYSTORE_PATH: release.keystore
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: |
-          if [ "${{ inputs.build_type }}" = "debug" ]; then
-            ./gradlew assembleDebug --stacktrace
-          else
-            ./gradlew assembleRelease --stacktrace
-          fi
+        run: ./gradlew assembleRelease --stacktrace
+
+      - name: 🚀 Compilar APK Debug Instalable
+        if: steps.check-signing.outputs.has_signing != 'true'
+        working-directory: frontend/android
+        run: ./gradlew assembleDebug --stacktrace
 
       - name: 📦 Identificar archivo APK generado
         id: apk-finder
         run: |
           APK_PATH=$(find frontend/android/app/build/outputs/apk -name "*.apk" | head -n 1)
-          echo "APK encontrado en: $APK_PATH"
-          echo "apk_path=$APK_PATH" >> $GITHUB_OUTPUT
+          APK_NAME=$(basename "$APK_PATH")
+          echo "APK encontrado en: $APK_PATH ($APK_NAME)"
+          echo "apk_path=$APK_PATH" >> "$GITHUB_OUTPUT"
 
       - name: 📤 Subir APK como Artifact de GitHub
         uses: actions/upload-artifact@v4
         with:
-          name: InvenEasy-${{ inputs.build_type || 'release' }}-APK
+          name: InvenEasy-${{ steps.check-signing.outputs.apk_mode == 'release' && 'Release' || 'Debug' }}-APK
           path: ${{ steps.apk-finder.outputs.apk_path }}
           retention-days: 30
