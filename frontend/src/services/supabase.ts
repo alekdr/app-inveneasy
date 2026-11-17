@@ -172,3 +172,82 @@ export async function deleteItem(itemId: string) {
   if (error) throw error
   return true
 }
+
+// ===== Servicios de Lista de Deseos (Wishlist) =====
+
+export async function fetchWishlist() {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
+
+  const { data, error } = await supabase
+    .from('wishlist_items')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+  return data
+}
+
+export async function createWishlistItem(item: {
+  title: string
+  estimated_price?: number
+  image_url?: string
+  cloudinary_public_id?: string
+  category?: string
+  link_url?: string
+  notes?: string
+}) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Usuario no autenticado')
+
+  const { data, error } = await supabase
+    .from('wishlist_items')
+    .insert({
+      user_id: user.id,
+      title: item.title,
+      estimated_price: item.estimated_price || 0,
+      image_url: item.image_url || null,
+      cloudinary_public_id: item.cloudinary_public_id || null,
+      category: item.category || 'General',
+      link_url: item.link_url || null,
+      notes: item.notes || null,
+    })
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+export async function updateWishlistItem(id: string, updates: Partial<{
+  title: string
+  estimated_price: number
+  image_url: string
+  cloudinary_public_id: string
+  category: string
+  link_url: string
+  is_purchased: boolean
+  purchased_date: string | null
+  notes: string
+}>) {
+  const { data, error } = await supabase
+    .from('wishlist_items')
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+export async function deleteWishlistItem(id: string) {
+  const { error } = await supabase
+    .from('wishlist_items')
+    .delete()
+    .eq('id', id)
+
+  if (error) throw error
+  return true
+}

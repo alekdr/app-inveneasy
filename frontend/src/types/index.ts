@@ -97,5 +97,22 @@ export interface Saving {
   created_at: string
 }
 
+// ===== Lista de Deseos (Wishlist) =====
+export interface WishlistItem {
+  id: string
+  user_id: string
+  title: string
+  estimated_price: number
+  image_url: string | null
+  cloudinary_public_id: string | null
+  category: string
+  link_url: string | null
+  is_purchased: boolean
+  purchased_date: string | null
+  notes: string | null
+  created_at: string
+  updated_at: string
+}
+
 // ===== Navigation =====
-export type TabId = 'home' | 'closet' | 'routines' | 'finances' | 'habits' | 'calendar'
+export type TabId = 'home' | 'closet' | 'routines' | 'finances' | 'habits' | 'calendar' | 'wishlist'

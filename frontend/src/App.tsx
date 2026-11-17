@@ -15,6 +15,7 @@ import RoutinesPage from './pages/RoutinesPage'
 import FinancesPage from './pages/FinancesPage'
 import HabitsPage from './pages/HabitsPage'
 import CalendarPage from './pages/CalendarPage'
+import WishlistPage from './pages/WishlistPage'
 
 function App() {
   const initialize = useAuthStore((s) => s.initialize)
@@ -60,6 +61,9 @@ function App() {
           {/* Hábitos y Calendario */}
           <Route path="/habits" element={<HabitsPage />} />
           <Route path="/calendar" element={<CalendarPage />} />
+
+          {/* Lista de Deseos (Wishlist) */}
+          <Route path="/wishlist" element={<WishlistPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
