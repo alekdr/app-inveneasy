@@ -1,0 +1,58 @@
+@import url('https://fonts.googleapis.com/css2?family=Josefin+Sans:ital,wght@0,100..700;1,100..700&display=swap');
+@import "tailwindcss";
+
+/* ===== Palette Pasteles & Estética Editorial / Limpia (No AI look) ===== */
+:root {
+  --font-sans: 'Josefin Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  
+  /* Pasteles suaves */
+  --pastel-lavender: #e9e5f5;
+  --pastel-peach: #fae8df;
+  --pastel-mint: #e2f4ec;
+  --pastel-sky: #e3edf7;
+  --pastel-sand: #f5f2eb;
+
+  /* Colores de marca sutiles */
+  --primary-accent: #6b5ce7;
+  --primary-soft: #f0eeff;
+
+  /* Superficies */
+  --bg-main: #fbfaf8;
+  --bg-surface: #ffffff;
+  --border-subtle: #eeece8;
+  --text-main: #222224;
+  --text-muted: #787570;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-main: #141416;
+    --bg-surface: #1c1c1f;
+    --border-subtle: #29292e;
+    --text-main: #f3f3f5;
+    --text-muted: #8e8d94;
+  }
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.01em;
+}
+
+#root {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
