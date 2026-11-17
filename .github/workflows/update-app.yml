@@ -57,7 +57,7 @@ jobs:
           
           CHANNEL="${{ inputs.channel || 'production' }}"
           echo "Publicando actualización en el canal: $CHANNEL..."
-          npx @capgo/cli bundle upload com.inven.easy \
+          npx @capgo/cli bundle upload com.founders.inveneasy \
             --apikey "$CAPGO_TOKEN" \
             --channel "$CHANNEL" \
             --path dist \
