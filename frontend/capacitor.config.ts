@@ -1,25 +1,32 @@
-import type { CapacitorConfig } from '@capacitor/cli'
+import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.inven.easy',
+  appId: 'com.founders.inveneasy',
   appName: 'InvenEasy',
   webDir: 'dist',
   server: {
     androidScheme: 'https',
-    cleartext: true,
+    cleartext: true
   },
   plugins: {
     CapacitorUpdater: {
-      autoUpdate: 'atBackground',
+      autoUpdate: 'always',
       channel: 'production',
       resetWhenUpdate: true,
       autoDeleteFailed: true,
+      appId: 'com.founders.inveneasy',
+      version: '0.0.0',
+      defaultChannel: 'production',
+      autoSplashscreen: true
     },
     LocalNotifications: {
       smallIcon: 'ic_stat_icon_config_sample',
-      iconColor: '#7c3aed',
+      iconColor: '#7c3aed'
     },
-  },
-}
+    SplashScreen: {
+      launchAutoHide: false
+    }
+  }
+};
 
-export default config
+export default config;

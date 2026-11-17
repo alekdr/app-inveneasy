@@ -56,9 +56,6 @@ jobs:
           fi
           
           CHANNEL="${{ inputs.channel || 'production' }}"
-          echo "Verificando registro de la aplicación en Capgo Cloud..."
-          npx @capgo/cli app add com.inven.easy --apikey "$CAPGO_TOKEN" --name "InvenEasy" || true
-          
           echo "Publicando actualización en el canal: $CHANNEL..."
           npx @capgo/cli bundle upload com.inven.easy \
             --apikey "$CAPGO_TOKEN" \
