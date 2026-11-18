@@ -1,10 +1,18 @@
 """
 InvenEasy API - Punto de entrada principal
 """
+import sys
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import get_settings
 from app.api import health, images
+
+# Consolas de Windows (cp1252) no soportan emojis: forzar UTF-8 sin romper si falla
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+except (AttributeError, ValueError):
+    pass
 
 settings = get_settings()
 
@@ -21,8 +29,10 @@ app.add_middleware(
         settings.frontend_url,
         "http://localhost:5173",
         "http://localhost:4173",  # Vite preview
-        "capacitor://localhost",  # Capacitor Android
+        "capacitor://localhost",  # Capacitor Android (androidScheme: capacitor)
         "http://localhost",       # Capacitor fallback
+        "https://localhost",      # Capacitor Android (androidScheme: https)
+        "https://localhost:5173",
     ],
     allow_credentials=True,
     allow_methods=["*"],

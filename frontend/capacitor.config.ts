@@ -8,6 +8,10 @@ const config: CapacitorConfig = {
     androidScheme: 'https',
     cleartext: true
   },
+  android: {
+    // Permite llamar al backend por HTTP (LAN) desde el WebView https://localhost
+    allowMixedContent: true
+  },
   plugins: {
     CapacitorUpdater: {
       autoUpdate: 'always',

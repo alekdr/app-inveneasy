@@ -17,7 +17,7 @@ import {
   deleteItem,
   supabase,
 } from '../services/supabase'
-import { uploadImage } from '../services/api'
+import { uploadImage, getUploadErrorMessage } from '../services/api'
 import { takePhoto, triggerHaptic } from '../services/capacitor'
 import { toast } from 'sonner'
 import type { ClosetItem } from '../types'
@@ -113,8 +113,8 @@ export default function ItemsPage() {
           const uploadRes = await uploadImage(fileToUpload)
           finalImageUrl = uploadRes.image_url
           finalPublicId = uploadRes.public_id
-        } catch {
-          toast.warning('No se pudo subir la foto a Cloudinary, guardando sin imagen')
+        } catch (err) {
+          toast.warning(getUploadErrorMessage(err))
         }
       }
 

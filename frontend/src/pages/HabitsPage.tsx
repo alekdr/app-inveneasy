@@ -115,6 +115,7 @@ export default function HabitsPage() {
           h.id === habit.id ? { ...h, status: nextStatus, progress_value: nextVal } : h
         )
       )
+      await loadData() // refresca rachas calculadas
       if (nextStatus === 'completed') toast.success('¡Hábito completado!')
     } catch {
       toast.error('Error al registrar progreso')
@@ -134,6 +135,7 @@ export default function HabitsPage() {
           h.id === habit.id ? { ...h, status: nextStatus, progress_value: nextVal } : h
         )
       )
+      await loadData() // refresca rachas calculadas
       if (nextStatus === 'completed') toast.success('¡Meta diaria alcanzada!')
     } catch {
       toast.error('Error al actualizar')

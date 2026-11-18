@@ -341,6 +341,7 @@ export async function fetchHabits(dateStr: string) {
 
   if (habitsError) throw habitsError
 
+  // Logs de hoy (para el estado del día)
   const { data: logs, error: logsError } = await supabase
     .from('habit_logs')
     .select('*')
@@ -349,13 +350,104 @@ export async function fetchHabits(dateStr: string) {
 
   if (logsError) throw logsError
 
+  // Logs recientes (para calcular rachas en el cliente)
+  const startDate = new Date(dateStr + 'T00:00:00')
+  startDate.setDate(startDate.getDate() - 400)
+  const startDateStr = startDate.toISOString().slice(0, 10)
+
+  const { data: recentLogs, error: recentError } = await supabase
+    .from('habit_logs')
+    .select('habit_id, log_date, status')
+    .eq('user_id', user.id)
+    .gte('log_date', startDateStr)
+
+  if (recentError) throw recentError
+
+  const logsByHabit = new Map<string, Map<string, string>>()
+  for (const l of recentLogs || []) {
+    if (!logsByHabit.has(l.habit_id)) logsByHabit.set(l.habit_id, new Map())
+    logsByHabit.get(l.habit_id)!.set(l.log_date, l.status)
+  }
+
+  const toStr = (d: Date) => {
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${y}-${m}-${day}`
+  }
+
+  const appliesOn = (frequency: string | null, d: Date) => {
+    const iso = d.getDay() // 0=domingo, 6=sábado
+    if (frequency === 'weekdays') return iso >= 1 && iso <= 5
+    if (frequency === 'weekends') return iso === 0 || iso === 6
+    return true
+  }
+
+  const computeStreaks = (
+    habitId: string,
+    frequency: string | null,
+    today: string
+  ): { current: number; best: number } => {
+    const dayMap = logsByHabit.get(habitId)
+    if (!dayMap || dayMap.size === 0) return { current: 0, best: 0 }
+
+    // Racha actual: retroceder desde el último día completado
+    let lastDone: string | null = null
+    for (const [logDate, status] of dayMap) {
+      if (status === 'completed' && (!lastDone || logDate > lastDone)) {
+        lastDone = logDate
+      }
+    }
+
+    let current = 0
+    if (lastDone) {
+      const cursor = new Date(lastDone + 'T00:00:00')
+      for (let guard = 0; guard < 400; guard++) {
+        if (!appliesOn(frequency, cursor)) {
+          cursor.setDate(cursor.getDate() - 1)
+          continue
+        }
+        const status = dayMap.get(toStr(cursor))
+        if (status === 'completed') current++
+        else if (status === 'skipped') {
+          /* no rompe */
+        } else break
+        cursor.setDate(cursor.getDate() - 1)
+      }
+    }
+
+    // Mejor racha histórica
+    let best = 0
+    let run = 0
+    const todayDate = new Date(today + 'T00:00:00')
+    const first = [...dayMap.keys()].sort()[0]
+    const firstDate = new Date(first + 'T00:00:00')
+    for (let d = new Date(firstDate.getTime()); d <= todayDate; d.setDate(d.getDate() + 1)) {
+      if (!appliesOn(frequency, d)) continue
+      const status = dayMap.get(toStr(d))
+      if (status === 'completed') {
+        run++
+        if (run > best) best = run
+      } else if (status === 'skipped') {
+        /* no rompe */
+      } else {
+        run = 0
+      }
+    }
+
+    return { current, best: Math.max(best, current) }
+  }
+
   return (habits || []).map((h) => {
     const log = logs?.find((l) => l.habit_id === h.id)
+    const { current, best } = computeStreaks(h.id, h.frequency, dateStr)
     return {
       ...h,
       status: log?.status || 'pending',
       progress_value: Number(log?.progress_value || 0),
       logId: log?.id,
+      current_streak: current,
+      best_streak: best,
     }
   })
 }

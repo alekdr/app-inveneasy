@@ -18,7 +18,7 @@ import {
   updateWishlistItem,
   deleteWishlistItem,
 } from '../services/supabase'
-import { uploadImage } from '../services/api'
+import { uploadImage, getUploadErrorMessage } from '../services/api'
 import { takePhoto, triggerHaptic } from '../services/capacitor'
 import { formatCurrency, getSavedCurrency, type CurrencyCode } from '../services/currency'
 import { toast } from 'sonner'
@@ -118,8 +118,8 @@ export default function WishlistPage() {
           const uploadRes = await uploadImage(fileToUpload)
           finalImageUrl = uploadRes.image_url
           finalPublicId = uploadRes.public_id
-        } catch {
-          toast.warning('No se pudo subir la foto a Cloudinary, guardando sin foto')
+        } catch (err) {
+          toast.warning(getUploadErrorMessage(err))
         }
       }
 
