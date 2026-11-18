@@ -582,7 +582,7 @@ export default function SettingsPage() {
       <div className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
         <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
           <span className="font-medium">Versión de InvenEasy</span>
-          <span className="font-bold text-slate-800 dark:text-slate-200">v0.4.0</span>
+          <span className="font-bold text-slate-800 dark:text-slate-200">v0.5.0</span>
         </div>
         <div className="mt-2 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
           <span className="font-medium">Identificador</span>
