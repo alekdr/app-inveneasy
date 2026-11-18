@@ -9,12 +9,15 @@ import {
   IoChevronForwardSharp as ArrowRight2,
   IoPencilSharp as Edit2,
   IoCubeSharp as Box,
+  IoSparklesSharp as Sparkles,
+  IoRefreshSharp as Refresh,
 } from 'react-icons/io5'
 import {
   fetchCategories,
   createCategory,
   updateCategory,
   deleteCategory,
+  supabase,
 } from '../services/supabase'
 import { triggerHaptic } from '../services/capacitor'
 import { toast } from 'sonner'
@@ -28,6 +31,13 @@ const pastelThemes: Record<string, { bg: string; text: string }> = {
   Accesorios: { bg: 'bg-[#e3edf7]', text: 'text-[#38628b]' },
 }
 
+type OutfitSlot = {
+  label: string
+  emoji: string
+  categoryNames: string[]
+  item: { name: string; image_url: string | null } | null
+}
+
 export default function ClosetPage() {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
@@ -39,6 +49,11 @@ export default function ClosetPage() {
   const [editingCat, setEditingCat] = useState<ClosetCategory | null>(null)
   const [catName, setCatName] = useState('')
   const [saving, setSaving] = useState(false)
+
+  const [outfitModalOpen, setOutfitModalOpen] = useState(false)
+  const [outfitLoading, setOutfitLoading] = useState(false)
+  const [occasion, setOccasion] = useState<'Casual' | 'Gym' | 'Elegante' | 'Trabajo'>('Casual')
+  const [outfit, setOutfit] = useState<OutfitSlot[]>([])
 
   const loadData = async () => {
     setLoading(true)
@@ -110,6 +125,86 @@ export default function ClosetPage() {
     c.name.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
+  const generateOutfit = async (selectedOccasion: typeof occasion) => {
+    setOutfitLoading(true)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { toast.error('Inicia sesión'); return }
+
+      const occasionMap: Record<string, { slots: Array<{ label: string; emoji: string; keywords: string[] }> }> = {
+        Casual: {
+          slots: [
+            { label: 'Superior', emoji: '👕', keywords: ['Ropa', 'Camisetas', 'Poleras', 'Torso', 'Camisas'] },
+            { label: 'Pantalón', emoji: '👖', keywords: ['Pantalones', 'Jeans', 'Shorts', 'Bermudas'] },
+            { label: 'Calzado', emoji: '👟', keywords: ['Calzado', 'Tenis', 'Zapatos', 'Sneakers'] },
+            { label: 'Accesorio', emoji: '🕶️', keywords: ['Accesorios', 'Gorras', 'Relojes', 'Cinturones'] },
+          ],
+        },
+        Gym: {
+          slots: [
+            { label: 'Top', emoji: '🏋️', keywords: ['Gym', 'Deportivo', 'Ropa', 'Camisetas', 'Torso'] },
+            { label: 'Pants', emoji: '🩱', keywords: ['Deportivo', 'Pantalones', 'Leggins', 'Shorts'] },
+            { label: 'Calzado', emoji: '👟', keywords: ['Calzado', 'Tenis', 'Deportivo'] },
+          ],
+        },
+        Elegante: {
+          slots: [
+            { label: 'Superior', emoji: '👔', keywords: ['Ropa', 'Camisas', 'Torso', 'Blazer', 'Formal'] },
+            { label: 'Pantalón', emoji: '👖', keywords: ['Pantalones', 'Formal', 'Jeans'] },
+            { label: 'Calzado', emoji: '👞', keywords: ['Calzado', 'Zapatos', 'Formal'] },
+            { label: 'Accesorio', emoji: '⌚', keywords: ['Accesorios', 'Relojes', 'Cinturones', 'Corbatas'] },
+          ],
+        },
+        Trabajo: {
+          slots: [
+            { label: 'Superior', emoji: '👔', keywords: ['Ropa', 'Camisas', 'Torso', 'Formal'] },
+            { label: 'Pantalón', emoji: '👖', keywords: ['Pantalones', 'Formal'] },
+            { label: 'Calzado', emoji: '👞', keywords: ['Calzado', 'Zapatos'] },
+            { label: 'Accesorio', emoji: '💼', keywords: ['Accesorios', 'Bolsos', 'Maletines'] },
+          ],
+        },
+      }
+
+      const slots = occasionMap[selectedOccasion]?.slots || occasionMap.Casual.slots
+
+      const { data: allItems } = await supabase
+        .from('closet_items')
+        .select('*, closet_subcategories(name, closet_categories(name))')
+        .eq('user_id', user.id)
+
+      const result: OutfitSlot[] = slots.map((slot) => {
+        const matching = (allItems || []).filter((item: any) => {
+          const catName = item.closet_subcategories?.closet_categories?.name || ''
+          const subcatName = item.closet_subcategories?.name || ''
+          return slot.keywords.some(
+            (kw) =>
+              catName.toLowerCase().includes(kw.toLowerCase()) ||
+              subcatName.toLowerCase().includes(kw.toLowerCase())
+          )
+        })
+
+        const withImg = matching.filter((i: any) => i.image_url)
+        const pool = withImg.length > 0 ? withImg : matching
+
+        if (pool.length === 0) return { label: slot.label, emoji: slot.emoji, categoryNames: slot.keywords, item: null }
+
+        const picked = pool[Math.floor(Math.random() * pool.length)]
+        return {
+          label: slot.label,
+          emoji: slot.emoji,
+          categoryNames: slot.keywords,
+          item: { name: picked.name, image_url: picked.image_url },
+        }
+      })
+
+      setOutfit(result)
+    } catch {
+      toast.error('Error al generar outfit')
+    } finally {
+      setOutfitLoading(false)
+    }
+  }
+
   return (
     <div className="flex flex-col gap-6">
       {/* Header */}
@@ -123,13 +218,22 @@ export default function ClosetPage() {
           </p>
         </div>
 
-        <button
-          onClick={openCreateModal}
-          className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-4 py-2.5 text-xs font-bold text-white shadow-xs transition hover:bg-slate-800 active:scale-95 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100"
-        >
-          <Add size={16} />
-          <span>Añadir sección</span>
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => { setOutfitModalOpen(true); generateOutfit(occasion) }}
+            className="inline-flex items-center gap-2 rounded-2xl bg-violet-600 px-4 py-2.5 text-xs font-bold text-white shadow-xs transition hover:bg-violet-700 active:scale-95"
+          >
+            <Sparkles size={16} />
+            <span>¿Qué me pongo? ✨</span>
+          </button>
+          <button
+            onClick={openCreateModal}
+            className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-4 py-2.5 text-xs font-bold text-white shadow-xs transition hover:bg-slate-800 active:scale-95 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100"
+          >
+            <Add size={16} />
+            <span>Añadir sección</span>
+          </button>
+        </div>
       </div>
 
       {/* Buscador */}
@@ -267,6 +371,92 @@ export default function ClosetPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Outfit Suggester */}
+      {outfitModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 backdrop-blur-xs animate-in fade-in sm:items-center p-4">
+          <div className="w-full max-w-sm rounded-3xl border border-slate-200/80 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
+            {/* Header modal */}
+            <div className="flex items-center justify-between px-6 pt-6 pb-4">
+              <div>
+                <h3 className="font-bold text-slate-900 dark:text-white text-base">¿Qué me pongo hoy? ✨</h3>
+                <p className="text-xs text-slate-400 mt-0.5">Selecciona la ocasión</p>
+              </div>
+              <button
+                onClick={() => setOutfitModalOpen(false)}
+                className="rounded-xl p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                <span className="text-lg font-bold">✕</span>
+              </button>
+            </div>
+
+            {/* Selector ocasión */}
+            <div className="px-6 pb-4 flex gap-2 flex-wrap">
+              {(['Casual', 'Gym', 'Elegante', 'Trabajo'] as const).map((occ) => (
+                <button
+                  key={occ}
+                  onClick={() => { setOccasion(occ); generateOutfit(occ) }}
+                  className={`rounded-2xl px-3 py-1.5 text-xs font-bold transition ${
+                    occasion === occ
+                      ? 'bg-violet-600 text-white'
+                      : 'bg-slate-100 text-slate-600 hover:bg-violet-100 hover:text-violet-700 dark:bg-slate-800 dark:text-slate-300'
+                  }`}
+                >
+                  {occ === 'Casual' ? '😎 Casual' : occ === 'Gym' ? '🏋️ Gym' : occ === 'Elegante' ? '✨ Elegante' : '💼 Trabajo'}
+                </button>
+              ))}
+            </div>
+
+            {/* Grid de prendas */}
+            <div className="px-6 pb-4">
+              {outfitLoading ? (
+                <div className="flex justify-center py-8">
+                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-violet-300 border-t-violet-600" />
+                </div>
+              ) : outfit.length === 0 ? (
+                <p className="text-center text-xs text-slate-400 py-6">No se encontraron prendas. Agrega items en tu armario.</p>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  {outfit.map((slot, i) => (
+                    <div key={i} className="rounded-2xl border border-slate-100 bg-slate-50 dark:border-slate-800 dark:bg-slate-800/50 overflow-hidden">
+                      {slot.item?.image_url ? (
+                        <img
+                          src={slot.item.image_url}
+                          alt={slot.item.name}
+                          className="w-full h-28 object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-28 flex flex-col items-center justify-center bg-slate-100 dark:bg-slate-800">
+                          <span className="text-3xl">{slot.emoji}</span>
+                          <span className="text-[10px] text-slate-400 mt-1">{slot.item ? slot.item.name : 'Sin prenda'}</span>
+                        </div>
+                      )}
+                      <div className="px-3 py-2">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{slot.label}</p>
+                        <p className="text-xs font-semibold text-slate-900 dark:text-white truncate">
+                          {slot.item ? slot.item.name : 'Sin coincidencia'}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Botón otra combinación */}
+            <div className="px-6 pb-6">
+              <button
+                onClick={() => generateOutfit(occasion)}
+                disabled={outfitLoading}
+                className="w-full flex items-center justify-center gap-2 rounded-2xl bg-violet-600 py-3 text-xs font-bold text-white transition hover:bg-violet-700 active:scale-95 disabled:opacity-50"
+              >
+                <Refresh size={15} />
+                Otra combinación 🔀
+              </button>
+            </div>
           </div>
         </div>
       )}

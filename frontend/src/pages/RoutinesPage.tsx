@@ -6,17 +6,24 @@ import {
   IoTimeOutline,
   IoTrashOutline,
   IoCalendarOutline,
+  IoFlameOutline,
+  IoStatsChartOutline,
 } from 'react-icons/io5'
 import CustomTimePicker from '../components/CustomTimePicker'
 import { supabase } from '../services/supabase'
-import { triggerHaptic } from '../services/capacitor'
+import { triggerHaptic, scheduleRoutineNotification } from '../services/capacitor'
 import { toast } from 'sonner'
+import { isOnline, addToOfflineQueue } from '../services/offlineSync'
 import type { Routine, RoutineLog, RoutineWithStatus } from '../types'
 
 export default function RoutinesPage() {
   const [routines, setRoutines] = useState<RoutineWithStatus[]>([])
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0])
   const [loading, setLoading] = useState(true)
+
+  // Estadísticas de consistencia
+  const [completedDaysStreak, setCompletedDaysStreak] = useState(0)
+  const [totalCompletedLogs, setTotalCompletedLogs] = useState(0)
 
   // Modal nueva rutina
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -58,6 +65,38 @@ export default function RoutinesPage() {
       })
 
       setRoutines(mapped)
+
+      // Cargar logs históricos para racha de consistencia
+      const { data: allLogs } = await supabase
+        .from('routine_logs')
+        .select('log_date, status')
+        .eq('user_id', user.id)
+        .eq('status', 'completed')
+
+      if (allLogs) {
+        setTotalCompletedLogs(allLogs.length)
+
+        // Contar días consecutivos con al menos una rutina completada
+        const uniqueDates = Array.from(new Set(allLogs.map(l => l.log_date))).sort().reverse()
+        let streak = 0
+        const checkDate = new Date()
+
+        for (let i = 0; i < 30; i++) {
+          const dStr = checkDate.toISOString().split('T')[0]
+          if (uniqueDates.includes(dStr)) {
+            streak++
+            checkDate.setDate(checkDate.getDate() - 1)
+          } else {
+            // Permitir que hoy aún no esté completado si apenas está empezando el día
+            if (i === 0) {
+              checkDate.setDate(checkDate.getDate() - 1)
+              continue
+            }
+            break
+          }
+        }
+        setCompletedDaysStreak(streak)
+      }
     } catch {
       toast.error('Error cargando rutinas')
     } finally {
@@ -77,6 +116,28 @@ export default function RoutinesPage() {
       await triggerHaptic()
       const targetStatus = routine.status === newStatus ? 'pending' : newStatus
 
+      // Actualizar UI inmediatamente
+      setRoutines((prev) =>
+        prev.map((r) => (r.id === routine.id ? { ...r, status: targetStatus } : r))
+      )
+
+      if (!isOnline()) {
+        addToOfflineQueue({
+          table: 'routine_logs',
+          action: 'upsert',
+          payload: {
+            routine_id: routine.id,
+            user_id: user.id,
+            log_date: selectedDate,
+            status: targetStatus,
+            updated_at: new Date().toISOString(),
+          },
+          options: { onConflict: 'routine_id,log_date' },
+        })
+        if (targetStatus === 'completed') toast.success('Rutina completada (sin conexión, se sincronizará)')
+        return
+      }
+
       const { error } = await supabase
         .from('routine_logs')
         .upsert(
@@ -92,10 +153,10 @@ export default function RoutinesPage() {
 
       if (error) throw error
 
-      setRoutines((prev) =>
-        prev.map((r) => (r.id === routine.id ? { ...r, status: targetStatus } : r))
-      )
-      if (targetStatus === 'completed') toast.success('Rutina completada')
+      if (targetStatus === 'completed') {
+        toast.success('Rutina completada')
+        setTotalCompletedLogs(prev => prev + 1)
+      }
     } catch {
       toast.error('Error al actualizar rutina')
     }
@@ -110,14 +171,31 @@ export default function RoutinesPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Inicia sesión para crear rutinas')
 
-      const { error } = await supabase.from('routines').insert({
-        user_id: user.id,
-        title: title.trim(),
-        time_of_day: timeOfDay || null,
-        frequency,
-      })
+      const { error } = await supabase
+        .from('routines')
+        .insert({
+          user_id: user.id,
+          title: title.trim(),
+          time_of_day: timeOfDay || null,
+          frequency,
+        })
 
       if (error) throw error
+
+      // Programar recordatorio local si tiene hora
+      if (timeOfDay && timeOfDay.includes(':')) {
+        const [h, m] = timeOfDay.split(':').map(Number)
+        if (!isNaN(h) && !isNaN(m)) {
+          const notifId = Math.floor(Math.random() * 100000)
+          await scheduleRoutineNotification(
+            notifId,
+            `Recordatorio: ${title.trim()}`,
+            'Es hora de realizar tu rutina diaria en InvenEasy.',
+            h,
+            m
+          )
+        }
+      }
 
       await triggerHaptic()
       toast.success('Rutina creada')
@@ -149,14 +227,14 @@ export default function RoutinesPage() {
   const progressPercent = total > 0 ? Math.round((completed / total) * 100) : 0
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
             Rutinas Diarias
           </h2>
-          <p className="text-xs text-slate-400 font-medium">Historial y progreso por día</p>
+          <p className="text-xs text-slate-400 font-medium">Historial, consistencia y progreso</p>
         </div>
 
         <button
@@ -166,6 +244,33 @@ export default function RoutinesPage() {
           <IoAddOutline size={16} />
           <span>Nueva rutina</span>
         </button>
+      </div>
+
+      {/* Panel de Estadísticas y Consistencia */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="rounded-3xl border border-slate-200/80 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900 flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#e2f4ec] text-[#2b7a5a]">
+            <IoFlameOutline size={20} />
+          </div>
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Racha de días</span>
+            <p className="text-base font-extrabold text-slate-900 dark:text-white">
+              {completedDaysStreak} {completedDaysStreak === 1 ? 'día' : 'días'} seguidos
+            </p>
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-slate-200/80 bg-white p-4 shadow-xs dark:border-slate-800 dark:bg-slate-900 flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#e9e5f5] text-[#5a48ab]">
+            <IoStatsChartOutline size={20} />
+          </div>
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Completadas</span>
+            <p className="text-base font-extrabold text-slate-900 dark:text-white">
+              {totalCompletedLogs} rutinas
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Selector de Fecha */}
@@ -186,7 +291,7 @@ export default function RoutinesPage() {
       <div className="rounded-3xl border border-slate-200/70 bg-white p-5 shadow-xs dark:border-slate-800 dark:bg-slate-900">
         <div className="flex items-center justify-between mb-2.5">
           <span className="text-[11px] font-bold uppercase tracking-widest text-slate-400">
-            Cumplimiento
+            Cumplimiento del día
           </span>
           <span className="text-xs font-bold text-[#6b5ce7] dark:text-violet-400">
             {completed} de {total} ({progressPercent}%)
@@ -310,7 +415,7 @@ export default function RoutinesPage() {
 
               <div>
                 <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-400">
-                  Hora (Opcional)
+                  Hora (Opcional - Notificación móvil)
                 </label>
                 <CustomTimePicker
                   value={timeOfDay}

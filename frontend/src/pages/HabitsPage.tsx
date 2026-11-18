@@ -9,6 +9,7 @@ import {
   IoAlertCircleOutline as WarningIcon,
 } from 'react-icons/io5'
 import {
+  supabase,
   fetchHabits,
   createHabit,
   logHabitProgress,
@@ -17,6 +18,7 @@ import {
 import CustomTimePicker from '../components/CustomTimePicker'
 import { triggerHaptic } from '../services/capacitor'
 import { toast } from 'sonner'
+import { isOnline, addToOfflineQueue } from '../services/offlineSync'
 import type { HabitWithProgress } from '../types'
 
 const PRESET_TEMPLATES = [
@@ -109,13 +111,32 @@ export default function HabitsPage() {
     const nextVal = nextStatus === 'completed' ? habit.target_value : 0
     try {
       await triggerHaptic()
-      await logHabitProgress(habit.id, todayStr, nextStatus, nextVal)
+      // Actualizar UI inmediatamente (optimistic update)
       setHabits((prev) =>
         prev.map((h) =>
           h.id === habit.id ? { ...h, status: nextStatus, progress_value: nextVal } : h
         )
       )
-      await loadData() // refresca rachas calculadas
+      if (!isOnline()) {
+        const { data: { user } } = await supabase.auth.getUser()
+        addToOfflineQueue({
+          table: 'habit_logs',
+          action: 'upsert',
+          payload: {
+            habit_id: habit.id,
+            user_id: user?.id,
+            log_date: todayStr,
+            status: nextStatus,
+            progress_value: nextVal,
+            updated_at: new Date().toISOString(),
+          },
+          options: { onConflict: 'habit_id,log_date' },
+        })
+        if (nextStatus === 'completed') toast.success('¡Hábito completado! (sin conexión, se sincronizará)')
+        return
+      }
+      await logHabitProgress(habit.id, todayStr, nextStatus, nextVal)
+      await loadData()
       if (nextStatus === 'completed') toast.success('¡Hábito completado!')
     } catch {
       toast.error('Error al registrar progreso')
@@ -129,13 +150,31 @@ export default function HabitsPage() {
     const nextStatus = nextVal >= habit.target_value ? 'completed' : 'pending'
     try {
       await triggerHaptic()
-      await logHabitProgress(habit.id, todayStr, nextStatus, nextVal)
       setHabits((prev) =>
         prev.map((h) =>
           h.id === habit.id ? { ...h, status: nextStatus, progress_value: nextVal } : h
         )
       )
-      await loadData() // refresca rachas calculadas
+      if (!isOnline()) {
+        const { data: { user } } = await supabase.auth.getUser()
+        addToOfflineQueue({
+          table: 'habit_logs',
+          action: 'upsert',
+          payload: {
+            habit_id: habit.id,
+            user_id: user?.id,
+            log_date: todayStr,
+            status: nextStatus,
+            progress_value: nextVal,
+            updated_at: new Date().toISOString(),
+          },
+          options: { onConflict: 'habit_id,log_date' },
+        })
+        if (nextStatus === 'completed') toast.success('¡Meta diaria alcanzada! (sin conexión)')
+        return
+      }
+      await logHabitProgress(habit.id, todayStr, nextStatus, nextVal)
+      await loadData()
       if (nextStatus === 'completed') toast.success('¡Meta diaria alcanzada!')
     } catch {
       toast.error('Error al actualizar')
