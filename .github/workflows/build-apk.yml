@@ -5,10 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'frontend/android/**'
-      - 'frontend/capacitor.config.ts'
-      - 'frontend/package.json'
-      - 'frontend/package-lock.json'
+      - 'frontend/**'
       - '.github/workflows/build-apk.yml'
   workflow_dispatch:
     inputs:
@@ -54,6 +51,9 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://wpanurtrwzenzembfivt.supabase.co' }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY || 'sb_publishable_kKQoyKCvm_GUNUMdbpI2MA_Zb3FKR24' }}
           VITE_API_URL: ${{ secrets.VITE_API_URL || vars.VITE_API_URL || 'http://localhost:8000' }}
+          VITE_CLOUDINARY_CLOUD_NAME: ${{ secrets.VITE_CLOUDINARY_CLOUD_NAME || 'djqfvbzsd' }}
+          VITE_CLOUDINARY_API_KEY: ${{ secrets.VITE_CLOUDINARY_API_KEY || '523874164897117' }}
+          VITE_CLOUDINARY_API_SECRET: ${{ secrets.VITE_CLOUDINARY_API_SECRET || 'vlBTMt3CKLKtc0-7w6c9nkLYbWs' }}
         run: npm run build
 
       - name: 🔄 Sincronizar Capacitor con Android
