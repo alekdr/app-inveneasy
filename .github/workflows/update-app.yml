@@ -51,9 +51,15 @@ jobs:
           CAPGO_TOKEN: ${{ secrets.CAPGO_TOKEN }}
         run: |
           if [ -z "$CAPGO_TOKEN" ]; then
-            echo "❌ Error: El secret CAPGO_TOKEN no está configurado en el repositorio de GitHub."
-            echo "Ve a Configuración de tu repositorio > Secrets and variables > Actions y agrega CAPGO_TOKEN."
-            exit 1
+            echo "::warning::El secret CAPGO_TOKEN no está configurado en el repositorio de GitHub."
+            echo "Para habilitar actualizaciones OTA automáticas, ve a Configuración de tu repositorio > Secrets and variables > Actions y agrega CAPGO_TOKEN."
+            if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+              echo "❌ Error: Se disparó el despliegue manual pero falta CAPGO_TOKEN."
+              exit 1
+            else
+              echo "⏭️ Omitiendo subida a Capgo en push automático (no fallará la compilación)."
+              exit 0
+            fi
           fi
           
           CHANNEL="${{ inputs.channel || 'production' }}"
