@@ -10,6 +10,8 @@ import {
   IoStatsChartOutline,
 } from 'react-icons/io5'
 import CustomTimePicker from '../components/CustomTimePicker'
+import CustomDatePicker from '../components/CustomDatePicker'
+import { confirmDialog } from '../stores/confirmStore'
 import { supabase } from '../services/supabase'
 import { triggerHaptic, scheduleRoutineNotification } from '../services/capacitor'
 import { toast } from 'sonner'
@@ -211,7 +213,13 @@ export default function RoutinesPage() {
   }
 
   const handleDeleteRoutine = async (id: string) => {
-    if (!confirm('¿Eliminar esta rutina?')) return
+    const ok = await confirmDialog({
+      title: 'Eliminar Rutina',
+      message: '¿Estás seguro de que deseas eliminar esta rutina?',
+      confirmText: 'Eliminar',
+      danger: true,
+    })
+    if (!ok) return
     try {
       await supabase.from('routines').delete().eq('id', id)
       await triggerHaptic()
@@ -279,11 +287,10 @@ export default function RoutinesPage() {
           <IoCalendarOutline size={16} className="text-[#6b5ce7]" />
           <span>Fecha seleccionada</span>
         </div>
-        <input
-          type="date"
+        <CustomDatePicker
           value={selectedDate}
-          onChange={(e) => setSelectedDate(e.target.value)}
-          className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-700 outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+          onChange={setSelectedDate}
+          label="Rutinas del día"
         />
       </div>
 

@@ -8,13 +8,13 @@ import {
   IoCalendarOutline,
   IoHeartOutline,
   IoArrowForward,
-  IoFlashSharp as ZapIcon,
+  IoSearchOutline,
 } from 'react-icons/io5'
 import { supabase } from '../services/supabase'
 import { fetchHabits } from '../services/supabase'
 import { triggerHaptic } from '../services/capacitor'
 import { formatCurrency } from '../services/currency'
-import { toast } from 'sonner'
+import WeeklyWrapCard from '../components/WeeklyWrapCard'
 import type { HabitWithProgress, FinancialTransaction } from '../types'
 
 const spaces = [
@@ -68,11 +68,6 @@ const spaces = [
   },
 ]
 
-function parseCOP(value: string): number {
-  const v = value.trim().replace(/\./g, '').replace(/,/g, '.')
-  return parseFloat(v) || 0
-}
-
 export default function DashboardPage() {
   const navigate = useNavigate()
   const todayStr = new Date().toISOString().split('T')[0]
@@ -81,13 +76,6 @@ export default function DashboardPage() {
   const [habits, setHabits] = useState<HabitWithProgress[]>([])
   const [balance, setBalance] = useState<number>(0)
   const [todayExpense, setTodayExpense] = useState<number>(0)
-
-  // Modal Gasto Rápido
-  const [isQuickExpenseOpen, setIsQuickExpenseOpen] = useState(false)
-  const [quickAmount, setQuickAmount] = useState('')
-  const [quickCategory, setQuickCategory] = useState('Alimentación')
-  const [quickDesc, setQuickDesc] = useState('')
-  const [savingQuick, setSavingQuick] = useState(false)
 
   const loadTodayStats = async () => {
     try {
@@ -124,36 +112,6 @@ export default function DashboardPage() {
     loadTodayStats()
   }, [])
 
-  const handleSaveQuickExpense = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!quickAmount) return
-    setSavingQuick(true)
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-      await triggerHaptic()
-      const rawValue = parseCOP(quickAmount)
-      const { error } = await supabase.from('financial_transactions').insert({
-        user_id: user.id,
-        type: 'expense',
-        amount: rawValue,
-        category: quickCategory,
-        description: quickDesc || null,
-        transaction_date: todayStr,
-      })
-      if (error) throw error
-      toast.success('Gasto rápido registrado')
-      setIsQuickExpenseOpen(false)
-      setQuickAmount('')
-      setQuickDesc('')
-      await loadTodayStats()
-    } catch (err: any) {
-      toast.error(err.message || 'Error al guardar gasto')
-    } finally {
-      setSavingQuick(false)
-    }
-  }
-
   const completedHabits = habits.filter(h => h.status === 'completed').length
   const habitPercent = habits.length > 0 ? Math.round((completedHabits / habits.length) * 100) : 0
 
@@ -174,15 +132,25 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          <button
-            onClick={() => setIsQuickExpenseOpen(true)}
-            className="self-start sm:self-auto inline-flex items-center gap-2 rounded-2xl bg-rose-600 px-4 py-2.5 text-xs font-bold text-white shadow-xs transition hover:bg-rose-700 active:scale-95"
-          >
-            <ZapIcon size={15} />
-            <span>+ Gasto Rápido</span>
-          </button>
+          <div className="flex items-center self-start sm:self-auto">
+            <button
+              type="button"
+              onClick={() => {
+                triggerHaptic()
+                window.dispatchEvent(new CustomEvent('inven_open_spotlight'))
+              }}
+              className="inline-flex items-center gap-2 rounded-2xl border border-slate-200/90 bg-white px-3.5 py-2.5 text-xs font-bold text-slate-700 shadow-xs transition hover:bg-slate-50 active:scale-95 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-200"
+              title="Buscar en InvenEasy"
+            >
+              <IoSearchOutline size={16} />
+              <span>Buscar</span>
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* Resumen Dominical / Semanal Automático */}
+      <WeeklyWrapCard />
 
       {/* Widgets de Resumen de Hoy */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
@@ -294,89 +262,6 @@ export default function DashboardPage() {
           ))}
         </div>
       </div>
-
-      {/* Modal Gasto Rápido */}
-      {isQuickExpenseOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs animate-in fade-in">
-          <div className="w-full max-w-sm rounded-3xl border border-slate-200/80 bg-white p-6 shadow-xl dark:border-slate-800 dark:bg-slate-900">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-rose-100 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400">
-                <ZapIcon size={18} />
-              </div>
-              <div>
-                <h3 className="font-bold text-slate-900 dark:text-white text-base">Gasto Rápido</h3>
-                <p className="text-[11px] text-slate-400">Se guardará con la fecha de hoy</p>
-              </div>
-            </div>
-
-            <form onSubmit={handleSaveQuickExpense} className="flex flex-col gap-3.5">
-              <div>
-                <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-400">
-                  Monto (COP)
-                </label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="Ej. 15.000"
-                  value={quickAmount}
-                  onChange={e => setQuickAmount(e.target.value)}
-                  required
-                  autoFocus
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-base font-bold outline-none focus:border-slate-500 focus:bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                />
-              </div>
-
-              <div>
-                <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-400">
-                  Categoría
-                </label>
-                <select
-                  value={quickCategory}
-                  onChange={e => setQuickCategory(e.target.value)}
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-semibold outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                >
-                  <option value="Alimentación">Alimentación</option>
-                  <option value="Transporte">Transporte</option>
-                  <option value="Ropa / Armario">Ropa / Armario</option>
-                  <option value="Servicios">Servicios</option>
-                  <option value="Ocio y Salidas">Ocio y Salidas</option>
-                  <option value="General">General / Otro</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-400">
-                  Descripción (opcional)
-                </label>
-                <input
-                  type="text"
-                  placeholder="Ej. Tinto, merienda, taxi..."
-                  value={quickDesc}
-                  onChange={e => setQuickDesc(e.target.value)}
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-medium outline-none focus:border-slate-500 focus:bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                />
-              </div>
-
-              <div className="flex gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsQuickExpenseOpen(false)}
-                  className="flex-1 rounded-2xl border border-slate-200 py-3 text-xs font-bold text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={savingQuick}
-                  className="flex-1 rounded-2xl bg-rose-600 py-3 text-xs font-bold text-white transition hover:bg-rose-700 disabled:opacity-50"
-                >
-                  {savingQuick ? 'Guardando...' : 'Registrar'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

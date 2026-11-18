@@ -16,6 +16,7 @@ import {
 } from '../services/supabase'
 import CustomTimePicker from '../components/CustomTimePicker'
 import { triggerHaptic } from '../services/capacitor'
+import { confirmDialog } from '../stores/confirmStore'
 import { toast } from 'sonner'
 import type { CalendarEvent, CalendarEventType } from '../types'
 
@@ -164,7 +165,13 @@ export default function CalendarPage() {
 
   // Eliminar evento
   const handleDeleteEvent = async (id: string) => {
-    if (!confirm('¿Eliminar este evento de la agenda?')) return
+    const ok = await confirmDialog({
+      title: 'Eliminar Evento',
+      message: '¿Eliminar este evento de tu agenda?',
+      confirmText: 'Eliminar',
+      danger: true,
+    })
+    if (!ok) return
     try {
       await deleteCalendarEvent(id)
       await triggerHaptic()

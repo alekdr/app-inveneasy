@@ -9,11 +9,17 @@ import {
   IoCalendarOutline,
   IoHeartOutline,
   IoLogOutOutline,
+  IoSettingsOutline,
+  IoSearchOutline,
 } from 'react-icons/io5'
 import BottomTabBar from './BottomTabBar'
+import SpotlightSearch from './SpotlightSearch'
+import ConfirmModal from './ConfirmModal'
+import { confirmDialog } from '../stores/confirmStore'
 import { useAuthStore } from '../stores/authStore'
 import { Toaster, toast } from 'sonner'
 import { motion } from 'motion/react'
+import { useState, useEffect } from 'react'
 
 const navItems = [
   { path: '/', label: 'Inicio', icon: <IoGridOutline size={18} /> },
@@ -23,21 +29,47 @@ const navItems = [
   { path: '/habits', label: 'Hábitos', icon: <IoFlameOutline size={18} /> },
   { path: '/calendar', label: 'Calendario', icon: <IoCalendarOutline size={18} /> },
   { path: '/wishlist', label: 'Deseos', icon: <IoHeartOutline size={18} /> },
+  { path: '/settings', label: 'Configuración', icon: <IoSettingsOutline size={18} /> },
 ]
 
 export default function AppLayout() {
   const { user, signOut } = useAuthStore()
   const navigate = useNavigate()
   const location = useLocation()
+  const [isSpotlightOpen, setIsSpotlightOpen] = useState(false)
+
+  // Atajo de teclado (Cmd+K / Ctrl+K) y evento personalizado
+  useEffect(() => {
+    const handleOpen = () => setIsSpotlightOpen(true)
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        setIsSpotlightOpen((prev) => !prev)
+      }
+    }
+    window.addEventListener('inven_open_spotlight', handleOpen)
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      window.removeEventListener('inven_open_spotlight', handleOpen)
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [])
 
   const handleSignOut = async () => {
+    const ok = await confirmDialog({
+      title: 'Cerrar Sesión',
+      message: '¿Estás seguro de que deseas cerrar sesión?',
+      confirmText: 'Cerrar sesión',
+      danger: true,
+    })
+    if (!ok) return
     await signOut()
     toast.success('Sesión finalizada')
     navigate('/auth')
   }
 
   return (
-    <div className="flex min-h-dvh bg-[#fbfaf8] text-[#222224] transition-colors dark:bg-[#121214] dark:text-[#f3f3f5]">
+    <div className="flex min-h-dvh w-full max-w-full overflow-x-hidden bg-[#fbfaf8] text-[#222224] transition-colors dark:bg-[#121214] dark:text-[#f3f3f5]">
       {/* Toast provider de Sonner */}
       <Toaster position="top-center" richColors theme="system" />
 
@@ -134,7 +166,7 @@ export default function AppLayout() {
       {/* ============================================================== */}
       {/* CONTENEDOR PRINCIPAL: Responsive                               */}
       {/* ============================================================== */}
-      <div className="flex flex-1 flex-col">
+      <div className="flex flex-1 flex-col min-w-0 overflow-x-hidden">
         {/* Top Navbar en Móvil */}
         <header className="safe-top sticky top-0 z-40 flex h-14 items-center justify-between border-b border-[#eeece8] bg-white/80 px-4 backdrop-blur-xl md:hidden dark:border-[#222226] dark:bg-[#18181b]/80">
           <div className="flex items-center gap-2.5">
@@ -144,26 +176,35 @@ export default function AppLayout() {
             </span>
           </div>
 
-          {user ? (
+          <div className="flex items-center gap-1.5">
             <button
-              onClick={handleSignOut}
-              className="rounded-xl p-1.5 text-slate-400 hover:text-rose-500"
-              title="Cerrar sesión"
+              onClick={() => setIsSpotlightOpen(true)}
+              className="rounded-xl p-1.5 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
+              title="Buscar en InvenEasy"
             >
-              <IoLogOutOutline size={20} />
+              <IoSearchOutline size={20} />
             </button>
-          ) : (
-            <button
-              onClick={() => navigate('/auth')}
-              className="rounded-xl bg-slate-900 px-3 py-1.5 text-xs font-bold text-white dark:bg-white dark:text-slate-900"
-            >
-              Entrar
-            </button>
-          )}
+            {user ? (
+              <button
+                onClick={handleSignOut}
+                className="rounded-xl p-1.5 text-slate-400 hover:text-rose-500"
+                title="Cerrar sesión"
+              >
+                <IoLogOutOutline size={20} />
+              </button>
+            ) : (
+              <button
+                onClick={() => navigate('/auth')}
+                className="rounded-xl bg-slate-900 px-3 py-1.5 text-xs font-bold text-white dark:bg-white dark:text-slate-900"
+              >
+                Entrar
+              </button>
+            )}
+          </div>
         </header>
 
         {/* Contenido Adaptativo */}
-        <main className="flex-1 px-4 py-5 md:px-8 md:py-8 lg:px-12 max-w-6xl w-full mx-auto pb-24 md:pb-10">
+        <main className="flex-1 px-4 py-5 md:px-8 md:py-8 lg:px-12 max-w-6xl w-full mx-auto pb-24 md:pb-10 min-w-0">
           <Outlet />
         </main>
 
@@ -172,6 +213,15 @@ export default function AppLayout() {
           <BottomTabBar />
         </div>
       </div>
+
+      {/* Global Spotlight Search */}
+      <SpotlightSearch
+        isOpen={isSpotlightOpen}
+        onClose={() => setIsSpotlightOpen(false)}
+      />
+
+      {/* Global In-App Confirm Dialog */}
+      <ConfirmModal />
     </div>
   )
 }

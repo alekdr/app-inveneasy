@@ -19,6 +19,7 @@ import {
 } from '../services/supabase'
 import { uploadImage, getUploadErrorMessage } from '../services/api'
 import { takePhoto, triggerHaptic } from '../services/capacitor'
+import { confirmDialog } from '../stores/confirmStore'
 import { toast } from 'sonner'
 import type { ClosetItem } from '../types'
 
@@ -141,7 +142,13 @@ export default function ItemsPage() {
   }
 
   const handleDelete = async (itemId: string) => {
-    if (!confirm('¿Eliminar este elemento?')) return
+    const ok = await confirmDialog({
+      title: 'Eliminar Prenda / Artículo',
+      message: '¿Estás seguro de que deseas eliminar este elemento del armario?',
+      confirmText: 'Eliminar',
+      danger: true,
+    })
+    if (!ok) return
     try {
       await deleteItem(itemId)
       await triggerHaptic()

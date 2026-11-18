@@ -18,6 +18,7 @@ import {
   supabase,
 } from '../services/supabase'
 import { triggerHaptic } from '../services/capacitor'
+import { confirmDialog } from '../stores/confirmStore'
 import { toast } from 'sonner'
 import type { ClosetSubcategory } from '../types'
 
@@ -99,7 +100,13 @@ export default function SubcategoriesPage() {
 
   const handleDelete = async (e: React.MouseEvent, sub: ClosetSubcategory) => {
     e.stopPropagation()
-    if (!confirm(`¿Eliminar la subcategoría "${sub.name}" y todos sus elementos?`)) return
+    const ok = await confirmDialog({
+      title: 'Eliminar Subcategoría',
+      message: `¿Eliminar la subcategoría "${sub.name}" y todos sus elementos?`,
+      confirmText: 'Eliminar',
+      danger: true,
+    })
+    if (!ok) return
 
     try {
       await deleteSubcategory(sub.id)

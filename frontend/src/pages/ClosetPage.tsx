@@ -20,6 +20,7 @@ import {
   supabase,
 } from '../services/supabase'
 import { triggerHaptic } from '../services/capacitor'
+import { confirmDialog } from '../stores/confirmStore'
 import { toast } from 'sonner'
 import type { ClosetCategory } from '../types'
 
@@ -109,7 +110,13 @@ export default function ClosetPage() {
 
   const handleDelete = async (e: React.MouseEvent, cat: ClosetCategory) => {
     e.stopPropagation()
-    if (!confirm(`¿Eliminar la sección "${cat.name}" y todos sus elementos?`)) return
+    const ok = await confirmDialog({
+      title: 'Eliminar Sección',
+      message: `¿Eliminar la sección "${cat.name}" y todos sus elementos?`,
+      confirmText: 'Eliminar',
+      danger: true,
+    })
+    if (!ok) return
 
     try {
       await deleteCategory(cat.id)
@@ -224,7 +231,7 @@ export default function ClosetPage() {
             className="inline-flex items-center gap-2 rounded-2xl bg-violet-600 px-4 py-2.5 text-xs font-bold text-white shadow-xs transition hover:bg-violet-700 active:scale-95"
           >
             <Sparkles size={16} />
-            <span>¿Qué me pongo? ✨</span>
+            <span>¿Qué me pongo?</span>
           </button>
           <button
             onClick={openCreateModal}
@@ -381,15 +388,18 @@ export default function ClosetPage() {
           <div className="w-full max-w-sm rounded-3xl border border-slate-200/80 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
             {/* Header modal */}
             <div className="flex items-center justify-between px-6 pt-6 pb-4">
-              <div>
-                <h3 className="font-bold text-slate-900 dark:text-white text-base">¿Qué me pongo hoy? ✨</h3>
-                <p className="text-xs text-slate-400 mt-0.5">Selecciona la ocasión</p>
+              <div className="flex items-center gap-2">
+                <Sparkles size={18} className="text-violet-600 dark:text-violet-400" />
+                <div>
+                  <h3 className="font-bold text-slate-900 dark:text-white text-base">¿Qué me pongo hoy?</h3>
+                  <p className="text-xs text-slate-400 mt-0.5">Selecciona la ocasión</p>
+                </div>
               </div>
               <button
                 onClick={() => setOutfitModalOpen(false)}
                 className="rounded-xl p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
               >
-                <span className="text-lg font-bold">✕</span>
+                <CloseCircle size={20} />
               </button>
             </div>
 
@@ -405,7 +415,7 @@ export default function ClosetPage() {
                       : 'bg-slate-100 text-slate-600 hover:bg-violet-100 hover:text-violet-700 dark:bg-slate-800 dark:text-slate-300'
                   }`}
                 >
-                  {occ === 'Casual' ? '😎 Casual' : occ === 'Gym' ? '🏋️ Gym' : occ === 'Elegante' ? '✨ Elegante' : '💼 Trabajo'}
+                  {occ}
                 </button>
               ))}
             </div>
@@ -429,8 +439,8 @@ export default function ClosetPage() {
                           className="w-full h-28 object-cover"
                         />
                       ) : (
-                        <div className="w-full h-28 flex flex-col items-center justify-center bg-slate-100 dark:bg-slate-800">
-                          <span className="text-3xl">{slot.emoji}</span>
+                        <div className="w-full h-28 flex flex-col items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-400">
+                          <Box size={24} />
                           <span className="text-[10px] text-slate-400 mt-1">{slot.item ? slot.item.name : 'Sin prenda'}</span>
                         </div>
                       )}
@@ -454,7 +464,7 @@ export default function ClosetPage() {
                 className="w-full flex items-center justify-center gap-2 rounded-2xl bg-violet-600 py-3 text-xs font-bold text-white transition hover:bg-violet-700 active:scale-95 disabled:opacity-50"
               >
                 <Refresh size={15} />
-                Otra combinación 🔀
+                <span>Otra combinación</span>
               </button>
             </div>
           </div>

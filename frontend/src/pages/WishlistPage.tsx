@@ -20,6 +20,7 @@ import {
 } from '../services/supabase'
 import { uploadImage, getUploadErrorMessage } from '../services/api'
 import { takePhoto, triggerHaptic } from '../services/capacitor'
+import { confirmDialog } from '../stores/confirmStore'
 import { formatCurrency, getSavedCurrency, type CurrencyCode } from '../services/currency'
 import { toast } from 'sonner'
 import type { WishlistItem } from '../types'
@@ -181,7 +182,13 @@ export default function WishlistPage() {
   }
 
   const handleDelete = async (item: WishlistItem) => {
-    if (!confirm(`¿Eliminar "${item.title}" de tu lista de deseos?`)) return
+    const ok = await confirmDialog({
+      title: 'Eliminar Deseo',
+      message: `¿Eliminar "${item.title}" de tu lista de deseos?`,
+      confirmText: 'Eliminar',
+      danger: true,
+    })
+    if (!ok) return
     try {
       await deleteWishlistItem(item.id)
       await triggerHaptic()

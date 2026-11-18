@@ -172,4 +172,4 @@ export interface HabitWithProgress extends Habit {
 }
 
 // ===== Navigation =====
-export type TabId = 'home' | 'closet' | 'routines' | 'finances' | 'habits' | 'calendar' | 'wishlist'
+export type TabId = 'home' | 'closet' | 'routines' | 'finances' | 'habits' | 'calendar' | 'wishlist' | 'settings'

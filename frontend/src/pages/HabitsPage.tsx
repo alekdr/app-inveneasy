@@ -17,6 +17,7 @@ import {
 } from '../services/supabase'
 import CustomTimePicker from '../components/CustomTimePicker'
 import { triggerHaptic } from '../services/capacitor'
+import { confirmDialog } from '../stores/confirmStore'
 import { toast } from 'sonner'
 import { isOnline, addToOfflineQueue } from '../services/offlineSync'
 import type { HabitWithProgress } from '../types'
@@ -199,7 +200,13 @@ export default function HabitsPage() {
   // Eliminar hábito
   const handleDeleteHabit = async (e: React.MouseEvent, habitId: string) => {
     e.stopPropagation()
-    if (!confirm('¿Eliminar este hábito y su historial?')) return
+    const ok = await confirmDialog({
+      title: 'Eliminar Hábito',
+      message: '¿Estás seguro de que deseas eliminar este hábito y todo su historial de progreso?',
+      confirmText: 'Eliminar',
+      danger: true,
+    })
+    if (!ok) return
     try {
       await deleteHabit(habitId)
       await triggerHaptic()

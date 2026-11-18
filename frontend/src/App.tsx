@@ -18,6 +18,7 @@ import FinancesPage from './pages/FinancesPage'
 import HabitsPage from './pages/HabitsPage'
 import CalendarPage from './pages/CalendarPage'
 import WishlistPage from './pages/WishlistPage'
+import SettingsPage from './pages/SettingsPage'
 
 function App() {
   const initialize = useAuthStore((s) => s.initialize)
@@ -68,6 +69,9 @@ function App() {
 
           {/* Lista de Deseos (Wishlist) */}
           <Route path="/wishlist" element={<WishlistPage />} />
+
+          {/* Configuración */}
+          <Route path="/settings" element={<SettingsPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
