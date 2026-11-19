@@ -311,6 +311,11 @@ export default function HabitsPage() {
           {habits.map((habit) => {
             const isCompleted = habit.status === 'completed'
             const isSkipped = habit.status === 'skipped'
+            const habitAriaLabel = isCompleted
+              ? 'Hábito completado: ' + habit.name
+              : isSkipped
+                ? 'Hábito pausado: ' + habit.name
+                : 'Hábito pendiante: ' + habit.name
 
             return (
               <div
@@ -322,6 +327,9 @@ export default function HabitsPage() {
                     ? 'border-slate-200 bg-slate-50/50 opacity-60 dark:border-slate-800 dark:bg-slate-800/40'
                     : 'border-slate-200/80 bg-white hover:border-slate-300 shadow-xs dark:border-slate-800 dark:bg-slate-900'
                   }`}
+                aria-label={habitAriaLabel}
+                role="button"
+                tabIndex={0}
               >
                 <div className="flex items-center gap-3.5">
                   {/* Círculo Check */}
@@ -370,6 +378,7 @@ export default function HabitsPage() {
                     <button
                       type="button"
                       onClick={(e) => handleIncrement(e, habit)}
+                      aria-label="Incrementar progreso en 1"
                       className="rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-bold text-slate-700 shadow-2xs hover:bg-white active:scale-95 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                     >
                       +1 {habit.unit}
@@ -381,7 +390,7 @@ export default function HabitsPage() {
                     <button
                       type="button"
                       onClick={(e) => handleSkipHabit(e, habit)}
-                      title="Saltar hoy sin perder racha"
+                      aria-label="Saltar hábito hoy sin perder racha"
                       className="rounded-xl p-1.5 text-slate-300 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800"
                     >
                       <Skip size={16} />
@@ -392,7 +401,7 @@ export default function HabitsPage() {
                   <button
                     type="button"
                     onClick={(e) => handleDeleteHabit(e, habit.id)}
-                    title="Eliminar hábito"
+                    aria-label="Eliminar hábito permanentemente"
                     className="rounded-xl p-1.5 text-slate-300 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40"
                   >
                     <Trash size={16} />
@@ -406,15 +415,16 @@ export default function HabitsPage() {
 
       {/* Modal Crear Hábito */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs animate-in fade-in overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs animate-in fade-in overflow-y-auto" aria-modal="true" role="dialog" aria-label="Crear nuevo hábito">
           <div className="w-full max-w-sm my-auto max-h-[92vh] overflow-y-auto rounded-3xl border border-slate-200/80 bg-white p-6 shadow-xl dark:border-slate-800 dark:bg-slate-900 scrollbar-thin">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="font-bold text-slate-900 dark:text-white text-base">
-                Nuevo Hábito
+                Crear nuevo hábito
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
                 className="rounded-xl p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                aria-label="Cerrar modal"
               >
                 <CloseCircle size={20} />
               </button>
@@ -439,12 +449,13 @@ export default function HabitsPage() {
               </div>
             </div>
 
-            <form onSubmit={handleCreateHabit} className="flex flex-col gap-3.5">
+            <form onSubmit={handleCreateHabit} className="flex flex-col gap-3.5" aria-label="Crear nuevo hábito">
               <div>
-                <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-400">
-                  Nombre
+                <label htmlFor="habit-name" className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-400">
+                  Nombre del hábito
                 </label>
                 <input
+                  id="habit-name"
                   type="text"
                   placeholder="Ej. Salir a correr, Leer..."
                   value={name}
@@ -452,22 +463,46 @@ export default function HabitsPage() {
                   required
                   autoFocus
                   className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold outline-none focus:border-slate-500 focus:bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  aria-describedby="name-help"
                 />
+                <p id="name-help" className="mt-1 text-xs text-slate-400">Máximo 50 caracteres, usa verbos acción</p>
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-400">
+                <label htmlFor="habit-frequency" className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-400">
                   Frecuencia
                 </label>
-                <select
-                  value={frequency}
-                  onChange={(e) => setFrequency(e.target.value)}
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                >
-                  <option value="daily">Todos los días</option>
-                  <option value="weekdays">Días de semana (Lun a Vie)</option>
-                  <option value="weekends">Fines de semana</option>
-                </select>
+                <div className="flex flex-col gap-1.5">
+                  {[
+                    { value: 'daily', label: 'Todos los días' },
+                    { value: 'weekdays', label: 'Días de semana (Lun a Vie)' },
+                    { value: 'weekends', label: 'Fines de semana' },
+                  ].map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setFrequency(opt.value)}
+                      className={`flex items-center justify-between rounded-2xl border px-4 py-3.5 text-sm font-semibold transition-all ${
+                        frequency === opt.value
+                          ? 'border-slate-900 bg-slate-900 text-white dark:border-white dark:bg-white dark:text-slate-900'
+                          : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-slate-600'
+                      }`}
+                    >
+                      <span>{opt.label}</span>
+                      <div
+                        className={`flex h-5 w-5 items-center justify-center rounded-full border-2 transition-all ${
+                          frequency === opt.value
+                            ? 'border-white dark:border-slate-900'
+                            : 'border-slate-300 dark:border-slate-600'
+                        }`}
+                      >
+                        {frequency === opt.value && (
+                          <div className="h-2.5 w-2.5 rounded-full bg-white dark:bg-slate-900" />
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div>
@@ -500,23 +535,27 @@ export default function HabitsPage() {
               {isMeasurable && (
                 <div className="grid grid-cols-2 gap-2 animate-in fade-in">
                   <div>
-                    <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-400">
-                      Cantidad
+                    <label htmlFor="habit-target" className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-400">
+                      Cantidad objetivo
                     </label>
                     <input
+                      id="habit-target"
                       type="number"
                       step="any"
                       placeholder="8"
                       value={targetValue}
                       onChange={(e) => setTargetValue(e.target.value)}
                       className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-semibold outline-none focus:border-slate-500 focus:bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      aria-describedby="target-help"
                     />
+                    <p id="target-help" className="mt-1 text-xs text-slate-400">Número de unidades (ej. 8 vasos)</p>
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-400">
-                      Unidad
+                    <label htmlFor="habit-unit" className="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-400">
+                      Unidad de medida
                     </label>
                     <input
+                      id="habit-unit"
                       type="text"
                       placeholder="vasos, min..."
                       value={unit}

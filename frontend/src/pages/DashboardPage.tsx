@@ -7,8 +7,10 @@ import {
   IoFlameOutline,
   IoCalendarOutline,
   IoHeartOutline,
+  IoFlagOutline,
   IoArrowForward,
   IoSearchOutline,
+  IoRestaurantOutline,
 } from 'react-icons/io5'
 import { supabase } from '../services/supabase'
 import { fetchHabits } from '../services/supabase'
@@ -59,12 +61,28 @@ const spaces = [
     badgeColor: 'bg-[#f5f2eb] text-[#615949]',
   },
   {
+    name: 'Metas',
+    description: 'Objetivos a corto, mediano y largo plazo con progreso',
+    path: '/goals',
+    tag: 'Progreso',
+    icon: <IoFlagOutline size={22} />,
+    badgeColor: 'bg-[#eae6f7] text-[#5b3fa0]',
+  },
+  {
     name: 'Deseos',
     description: 'Lista de compras futuras con fotos y presupuesto',
     path: '/wishlist',
     tag: 'Wishlist',
     icon: <IoHeartOutline size={22} />,
     badgeColor: 'bg-[#fae8f3] text-[#8e3871]',
+  },
+  {
+    name: 'Recetas',
+    description: 'Comida, remedios medicinales y más en tu recetario personal',
+    path: '/recipes',
+    tag: 'Cocina',
+    icon: <IoRestaurantOutline size={22} />,
+    badgeColor: 'bg-[#fdf0d5] text-[#9a6b1f]',
   },
 ]
 

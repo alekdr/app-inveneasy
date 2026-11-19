@@ -26,6 +26,8 @@ import { confirmDialog } from '../stores/confirmStore'
 import { toast } from 'sonner'
 import { LocalNotifications } from '@capacitor/local-notifications'
 import { Camera } from '@capacitor/camera'
+import { syncScheduledReminders } from '../services/notifications'
+import { Capacitor } from '@capacitor/core'
 
 // Toggle visual reutilizable
 function SettingsToggle({ enabled, onToggle, label, sublabel }: {
@@ -94,25 +96,6 @@ export default function SettingsPage() {
   const [queueCount, setQueueCount] = useState(0)
   const [syncing, setSyncing] = useState(false)
 
-  useEffect(() => {
-    const updateStatus = () => {
-      setOnlineStatus(isOnline())
-      setQueueCount(getOfflineQueue().length)
-    }
-    updateStatus()
-    window.addEventListener('online', updateStatus)
-    window.addEventListener('offline', updateStatus)
-
-    // Verificar permisos al montar
-    checkNotifPermission()
-    checkCameraPermission()
-
-    return () => {
-      window.removeEventListener('online', updateStatus)
-      window.removeEventListener('offline', updateStatus)
-    }
-  }, [])
-
   // ===== PERMISOS HANDLERS =====
   const checkNotifPermission = async () => {
     try {
@@ -132,6 +115,26 @@ export default function SettingsPage() {
     }
   }
 
+  useEffect(() => {
+    const updateStatus = () => {
+      setOnlineStatus(isOnline())
+      setQueueCount(getOfflineQueue().length)
+    }
+    updateStatus()
+    window.addEventListener('online', updateStatus)
+    window.addEventListener('offline', updateStatus)
+
+    // Verificar permisos al montar
+    checkNotifPermission()
+    checkCameraPermission()
+
+    return () => {
+      window.removeEventListener('online', updateStatus)
+      window.removeEventListener('offline', updateStatus)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const requestNotifPermission = async () => {
     try {
       await triggerHaptic()
@@ -139,11 +142,42 @@ export default function SettingsPage() {
       setNotifPermission(result.display)
       if (result.display === 'granted') {
         toast.success('Permiso de notificaciones concedido')
+        // Programar recordatorios de rutinas, hábitos y calendario
+        const sync = await syncScheduledReminders()
+        if (sync.scheduled > 0) {
+          toast.success(`${sync.scheduled} recordatorio(s) programado(s)`)
+        }
       } else {
         toast.warning('Permiso de notificaciones denegado — actívalo desde la configuración del teléfono')
       }
     } catch {
       toast.error('No se pudo solicitar permisos de notificaciones')
+    }
+  }
+
+  const handleSyncReminders = async () => {
+    try {
+      await triggerHaptic()
+      if (!Capacitor.isNativePlatform()) {
+        toast.info('Los recordatorios programados solo están disponibles en la app móvil')
+        return
+      }
+      const result = await syncScheduledReminders()
+      if (result.skipped === 'permission') {
+        toast.warning('Concede el permiso de notificaciones primero')
+        return
+      }
+      if (result.skipped === 'no-user') {
+        toast.error('Inicia sesión para sincronizar recordatorios')
+        return
+      }
+      toast.success(
+        result.scheduled > 0
+          ? `${result.scheduled} recordatorio(s) programado(s)`
+          : 'No hay recordatorios que programar (revisa horas de rutinas/hábitos y eventos)'
+      )
+    } catch {
+      toast.error('No se pudieron sincronizar los recordatorios')
     }
   }
 
@@ -428,6 +462,15 @@ export default function SettingsPage() {
             sublabel="Recibe tu resumen dominical cada semana"
           />
         </div>
+
+        <button
+          type="button"
+          onClick={handleSyncReminders}
+          className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-violet-200 bg-violet-50 py-2.5 text-xs font-bold text-violet-700 transition hover:bg-violet-100 active:scale-[0.98] dark:border-violet-800/60 dark:bg-violet-950/30 dark:text-violet-300"
+        >
+          <IoRefreshOutline size={14} />
+          Sincronizar recordatorios
+        </button>
       </div>
 
       {/* 4. ALERTAS INTELIGENTES */}

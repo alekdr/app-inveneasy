@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useEffect } from 'react'
 import { useAuthStore } from './stores/authStore'
 import { initCapgo } from './services/capgo'
+import { initPushNotifications, syncScheduledReminders } from './services/notifications'
 
 // Layout
 import AppLayout from './components/AppLayout'
@@ -18,6 +19,10 @@ import FinancesPage from './pages/FinancesPage'
 import HabitsPage from './pages/HabitsPage'
 import CalendarPage from './pages/CalendarPage'
 import WishlistPage from './pages/WishlistPage'
+import GoalsPage from './pages/GoalsPage'
+import RecipesPage from './pages/RecipesPage'
+import RecipeDetailPage from './pages/RecipeDetailPage'
+import RecipeFormPage from './pages/RecipeFormPage'
 import SettingsPage from './pages/SettingsPage'
 
 function App() {
@@ -29,6 +34,16 @@ function App() {
     initialize()
     initCapgo()
   }, [initialize])
+
+  // Notificaciones: registrar push y reprogramar recordatorios al iniciar sesión
+  useEffect(() => {
+    if (!user) return
+    const run = async () => {
+      await initPushNotifications()
+      await syncScheduledReminders()
+    }
+    run()
+  }, [user])
 
   if (!initialized) {
     return (
@@ -69,6 +84,15 @@ function App() {
 
           {/* Lista de Deseos (Wishlist) */}
           <Route path="/wishlist" element={<WishlistPage />} />
+
+          {/* Recetas */}
+          <Route path="/recipes" element={<RecipesPage />} />
+          <Route path="/recipes/new" element={<RecipeFormPage />} />
+          <Route path="/recipes/:id" element={<RecipeDetailPage />} />
+          <Route path="/recipes/:id/edit" element={<RecipeFormPage />} />
+
+          {/* Metas y Control */}
+          <Route path="/goals" element={<GoalsPage />} />
 
           {/* Configuración */}
           <Route path="/settings" element={<SettingsPage />} />

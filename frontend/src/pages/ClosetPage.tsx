@@ -34,7 +34,6 @@ const pastelThemes: Record<string, { bg: string; text: string }> = {
 
 type OutfitSlot = {
   label: string
-  emoji: string
   categoryNames: string[]
   item: { name: string; image_url: string | null } | null
 }
@@ -138,36 +137,36 @@ export default function ClosetPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { toast.error('Inicia sesión'); return }
 
-      const occasionMap: Record<string, { slots: Array<{ label: string; emoji: string; keywords: string[] }> }> = {
+      const occasionMap: Record<string, { slots: Array<{ label: string; keywords: string[] }> }> = {
         Casual: {
           slots: [
-            { label: 'Superior', emoji: '👕', keywords: ['Ropa', 'Camisetas', 'Poleras', 'Torso', 'Camisas'] },
-            { label: 'Pantalón', emoji: '👖', keywords: ['Pantalones', 'Jeans', 'Shorts', 'Bermudas'] },
-            { label: 'Calzado', emoji: '👟', keywords: ['Calzado', 'Tenis', 'Zapatos', 'Sneakers'] },
-            { label: 'Accesorio', emoji: '🕶️', keywords: ['Accesorios', 'Gorras', 'Relojes', 'Cinturones'] },
+            { label: 'Superior', keywords: ['Ropa', 'Camisetas', 'Poleras', 'Torso', 'Camisas'] },
+            { label: 'Pantalón', keywords: ['Pantalones', 'Jeans', 'Shorts', 'Bermudas'] },
+            { label: 'Calzado', keywords: ['Calzado', 'Tenis', 'Zapatos', 'Sneakers'] },
+            { label: 'Accesorio', keywords: ['Accesorios', 'Gorras', 'Relojes', 'Cinturones'] },
           ],
         },
         Gym: {
           slots: [
-            { label: 'Top', emoji: '🏋️', keywords: ['Gym', 'Deportivo', 'Ropa', 'Camisetas', 'Torso'] },
-            { label: 'Pants', emoji: '🩱', keywords: ['Deportivo', 'Pantalones', 'Leggins', 'Shorts'] },
-            { label: 'Calzado', emoji: '👟', keywords: ['Calzado', 'Tenis', 'Deportivo'] },
+            { label: 'Top', keywords: ['Gym', 'Deportivo', 'Ropa', 'Camisetas', 'Torso'] },
+            { label: 'Pants', keywords: ['Deportivo', 'Pantalones', 'Leggins', 'Shorts'] },
+            { label: 'Calzado', keywords: ['Calzado', 'Tenis', 'Deportivo'] },
           ],
         },
         Elegante: {
           slots: [
-            { label: 'Superior', emoji: '👔', keywords: ['Ropa', 'Camisas', 'Torso', 'Blazer', 'Formal'] },
-            { label: 'Pantalón', emoji: '👖', keywords: ['Pantalones', 'Formal', 'Jeans'] },
-            { label: 'Calzado', emoji: '👞', keywords: ['Calzado', 'Zapatos', 'Formal'] },
-            { label: 'Accesorio', emoji: '⌚', keywords: ['Accesorios', 'Relojes', 'Cinturones', 'Corbatas'] },
+            { label: 'Superior', keywords: ['Ropa', 'Camisas', 'Torso', 'Blazer', 'Formal'] },
+            { label: 'Pantalón', keywords: ['Pantalones', 'Formal', 'Jeans'] },
+            { label: 'Calzado', keywords: ['Calzado', 'Zapatos', 'Formal'] },
+            { label: 'Accesorio', keywords: ['Accesorios', 'Relojes', 'Cinturones', 'Corbatas'] },
           ],
         },
         Trabajo: {
           slots: [
-            { label: 'Superior', emoji: '👔', keywords: ['Ropa', 'Camisas', 'Torso', 'Formal'] },
-            { label: 'Pantalón', emoji: '👖', keywords: ['Pantalones', 'Formal'] },
-            { label: 'Calzado', emoji: '👞', keywords: ['Calzado', 'Zapatos'] },
-            { label: 'Accesorio', emoji: '💼', keywords: ['Accesorios', 'Bolsos', 'Maletines'] },
+            { label: 'Superior', keywords: ['Ropa', 'Camisas', 'Torso', 'Formal'] },
+            { label: 'Pantalón', keywords: ['Pantalones', 'Formal'] },
+            { label: 'Calzado', keywords: ['Calzado', 'Zapatos'] },
+            { label: 'Accesorio', keywords: ['Accesorios', 'Bolsos', 'Maletines'] },
           ],
         },
       }
@@ -193,12 +192,11 @@ export default function ClosetPage() {
         const withImg = matching.filter((i: any) => i.image_url)
         const pool = withImg.length > 0 ? withImg : matching
 
-        if (pool.length === 0) return { label: slot.label, emoji: slot.emoji, categoryNames: slot.keywords, item: null }
+        if (pool.length === 0) return { label: slot.label, categoryNames: slot.keywords, item: null }
 
         const picked = pool[Math.floor(Math.random() * pool.length)]
         return {
           label: slot.label,
-          emoji: slot.emoji,
           categoryNames: slot.keywords,
           item: { name: picked.name, image_url: picked.image_url },
         }
@@ -384,7 +382,7 @@ export default function ClosetPage() {
 
       {/* Modal Outfit Suggester */}
       {outfitModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 backdrop-blur-xs animate-in fade-in sm:items-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs animate-in fade-in p-4">
           <div className="w-full max-w-sm rounded-3xl border border-slate-200/80 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-900 overflow-hidden">
             {/* Header modal */}
             <div className="flex items-center justify-between px-6 pt-6 pb-4">

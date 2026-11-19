@@ -49,7 +49,7 @@ export default function UpdateBanner() {
 
       <div className="flex-1 min-w-0">
         <p className="text-sm font-bold leading-tight">
-          {update.mandatory ? '⚠️ Actualización obligatoria' : '✨ Nueva versión disponible'}
+          {update.mandatory ? 'Actualización obligatoria disponible' : 'Nueva versión disponible'}
         </p>
         <p className="text-xs opacity-85 mt-0.5">
           v{update.version} · {update.changelog}

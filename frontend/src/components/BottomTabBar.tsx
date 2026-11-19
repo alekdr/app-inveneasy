@@ -83,20 +83,23 @@ export default function BottomTabBar() {
 
   return (
     <>
-      <nav className="safe-bottom fixed bottom-0 left-0 right-0 z-50 border-t border-[#eeece8] bg-white/95 backdrop-blur-xl dark:bg-[#18181b]/95 dark:border-[#222226]">
+      <nav
+        aria-label="Navegación principal"
+        className="safe-bottom safe-left safe-right fixed bottom-0 left-0 right-0 z-50 border-t border-[#eeece8] bg-white/95 backdrop-blur-xl dark:bg-[#18181b]/95 dark:border-[#222226]"
+      >
         <div className="mx-auto flex max-w-md items-center justify-around px-6 py-2">
           {/* 1. Inicio */}
           <NavLink
             to="/"
             className={({ isActive }) =>
-              `flex flex-col items-center gap-1 py-1 text-[11px] font-bold transition-all ${
+              `flex min-h-11 flex-col items-center justify-center gap-1 py-1 text-[11px] font-bold transition-all ${
                 isActive
                   ? 'text-slate-900 dark:text-white'
                   : 'text-slate-400 hover:text-slate-600 dark:text-slate-500'
               }`
             }
           >
-            <IoGridOutline size={22} />
+            <IoGridOutline size={22} aria-hidden="true" />
             <span>Inicio</span>
           </NavLink>
 
@@ -104,24 +107,25 @@ export default function BottomTabBar() {
           <button
             type="button"
             onClick={handleOpenModal}
+            aria-label="Registrar movimiento en finanzas"
             title="Registrar en finanzas"
             className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-900 text-white shadow-lg transition active:scale-90 hover:bg-slate-800 dark:bg-white dark:text-slate-900 -mt-3 border-2 border-white dark:border-[#18181b]"
           >
-            <IoAddSharp size={28} />
+            <IoAddSharp size={28} aria-hidden="true" />
           </button>
 
           {/* 3. Configuración */}
           <NavLink
             to="/settings"
             className={({ isActive }) =>
-              `flex flex-col items-center gap-1 py-1 text-[11px] font-bold transition-all ${
+              `flex min-h-11 flex-col items-center justify-center gap-1 py-1 text-[11px] font-bold transition-all ${
                 isActive
                   ? 'text-slate-900 dark:text-white'
                   : 'text-slate-400 hover:text-slate-600 dark:text-slate-500'
               }`
             }
           >
-            <IoSettingsOutline size={22} />
+            <IoSettingsOutline size={22} aria-hidden="true" />
             <span>Ajustes</span>
           </NavLink>
         </div>

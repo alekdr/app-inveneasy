@@ -129,15 +129,28 @@ Sección para crear hábitos, marcarlos cada día y ver la mejora con el tiempo.
 
 ---
 
+### 8. Recetas
+Biblioteca personal de recetas de comida, medicinales, postres, bebidas y otras.
+
+- CRUD completo con foto (galería o cámara), título, descripción y etiquetas.
+- Categorías y dificultad (fácil, media, difícil); tiempos de preparación y cocción.
+- Ingredientes con cantidad y unidad; pasos ordenados que se pueden reordenar.
+- Búsqueda por nombre, ingrediente o etiqueta.
+- Favoritas para tener siempre a mano.
+- Botón **Cocinar ahora** que registra la fecha, una calificación de 1 a 5 estrellas y notas.
+- Historial de veces cocinada y promedio de calificación.
+- Estadísticas: total de recetas, favoritas, cocinadas y tiempo medio.
+
+---
+
+### 9. Metas
+Control de metas a largo, medio y corto plazo, con progreso medible, fecha objetivo y resumen por tipo.
+
+---
+
 ## Standby (soon)
 
 Estas ideas no son para la versión actual. Quedan guardadas para más adelante.
-
-### Metas (soon)
-Control de metas a largo, medio y corto plazo.
-
-### Recetas (soon)
-Biblioteca de recetas de comida, medicinales y otras. Se mencionó como importante en la descripción general.
 
 ### Combinación de ropa y más (soon)
 Planear outfits, crear combinaciones y sugerencias automáticas.
@@ -185,3 +198,106 @@ FastAPI (Python)Cerebro / Lógica pesada
 React + CapacitorInterfaz Web y Android APK
 Móvil (Capacitor + Plugins)
 Frontend (React + TypeScript + Tailwind CSS):
+
+---
+
+## Desarrollo
+
+```bash
+# Frontend
+cd frontend
+npm install
+npm run dev          # http://localhost:5173
+
+# Backend
+cd backend
+python -m venv venv
+venv\Scripts\activate          # Windows
+pip install -r requirements-dev.txt
+uvicorn app.main:app --reload  # http://localhost:8000/docs
+```
+
+### Migraciones de base de datos
+
+Ejecutar en orden en el **SQL Editor de Supabase**:
+
+| Archivo | Contenido |
+| --- | --- |
+| `001_initial_schema.sql` | Perfiles + armario |
+| `002_routines_and_finances.sql` | Rutinas, finanzas, compras y ahorros |
+| `003_wishlist.sql` | Lista de deseos |
+| `004_calendar_and_habits.sql` | Calendario y hábitos |
+| `005_debts.sql` | Deudas |
+| `006_habit_streaks.sql` | Rachas |
+| `007_budgets_and_fixed_expenses.sql` | Presupuestos y gastos fijos |
+| `008_goals_control.sql` | Metas |
+| `009_recipes.sql` | **Recetas + historial de cocinadas** |
+| `010_notifications.sql` | **Dispositivos push + preferencias** |
+
+---
+
+## Pruebas
+
+```bash
+# Frontend · unitarias (Vitest + Testing Library)
+cd frontend
+npm test
+npm run test:watch
+
+# Frontend · E2E (Playwright)
+npx playwright install chromium
+npm run test:e2e
+# Con sesión real:
+E2E_EMAIL=tu@email.com E2E_PASSWORD=tuclave npm run test:e2e
+
+# Backend · API (pytest con Supabase en memoria)
+cd backend
+venv\Scripts\python -m pytest
+```
+
+El workflow `.github/workflows/tests.yml` ejecuta Vitest, Playwright y pytest en cada push a `main`.
+
+---
+
+## Notificaciones
+
+- **Locales** (`@capacitor/local-notifications`): recordatorios de rutinas, hábitos y eventos del calendario, reprogramables desde **Ajustes → Notificaciones → Sincronizar recordatorios**.
+- **Push** (`@capacitor/push-notifications`): el token se registra en el backend (`POST /notifications/register-device`).
+
+Para activar el envío real de push:
+
+1. **Android:** crear proyecto en Firebase, añadir `google-services.json` en `frontend/android/app/` y configurar `google-services` en Gradle.
+2. **iOS:** crear una APNs Auth Key (`.p8`) en Apple Developer, habilitar *Push Notifications* en el target y subir la key al backend.
+3. Implementar el envío en `POST /notifications/send` (hoy responde en modo `dry_run`).
+
+---
+
+## iOS
+
+La plataforma iOS ya está creada (`frontend/ios`) con Capacitor 8.6 y el ciclo **UIScene** (`SceneDelegate.swift`).
+
+```bash
+cd frontend
+npm run build
+npx cap sync ios
+npx cap open ios
+```
+
+En Xcode:
+
+1. Seleccionar el target `App` → *Signing & Capabilities*.
+2. Elegir tu equipo de desarrollo y un bundle identifier propio (el actual es `com.inven.easy`).
+3. Añadir la capability **Push Notifications**.
+4. Ejecutar en un simulador o dispositivo con iOS 16+.
+
+> En Windows solo se puede generar y sincronizar el proyecto; compilar requiere macOS con Xcode.
+
+---
+
+## Accesibilidad
+
+- Foco visible (`:focus-visible`) para teclado y switch control.
+- Enlace **Saltar al contenido** y landmarks (`main`, `nav` con `aria-label`).
+- Iconos decorativos con `aria-hidden` y botones con `aria-label`.
+- Respeta `prefers-reduced-motion`.
+- Safe area (`env(safe-area-inset-*)` + variables inyectadas por Capacitor) en navegación inferior y contenido.

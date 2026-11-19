@@ -171,5 +171,74 @@ export interface HabitWithProgress extends Habit {
   logId?: string
 }
 
+// ===== Recetas =====
+export type RecipeCategory = 'comida' | 'medicinal' | 'postre' | 'bebida' | 'otro'
+export type RecipeDifficulty = 'facil' | 'media' | 'dificil'
+
+export interface RecipeIngredient {
+  name: string
+  amount: number | null
+  unit: string | null
+  notes: string | null
+}
+
+export interface Recipe {
+  id: string
+  user_id: string
+  title: string
+  description: string | null
+  category: RecipeCategory
+  difficulty: RecipeDifficulty
+  prep_time_minutes: number | null
+  cook_time_minutes: number | null
+  servings: number
+  ingredients: RecipeIngredient[]
+  instructions: string[]
+  image_url: string | null
+  cloudinary_public_id: string | null
+  tags: string[]
+  is_favorite: boolean
+  source_url: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface RecipeLog {
+  id: string
+  recipe_id: string
+  user_id: string
+  cooked_date: string
+  rating: number | null
+  notes: string | null
+  created_at: string
+}
+
+export interface RecipeFilters {
+  category?: RecipeCategory | 'all'
+  difficulty?: RecipeDifficulty | 'all'
+  onlyFavorites?: boolean
+  search?: string
+}
+
+// ===== Metas =====
+export type GoalType = 'short_term' | 'medium_term' | 'long_term'
+
+export interface Goal {
+  id: string
+  user_id: string
+  title: string
+  description: string | null
+  target_date: string
+  goal_type: GoalType
+  category: string
+  target_value: number | null
+  current_value: number
+  unit: string | null
+  is_completed: boolean
+  completed_date: string | null
+  created_at: string
+  updated_at: string
+}
+
 // ===== Navigation =====
-export type TabId = 'home' | 'closet' | 'routines' | 'finances' | 'habits' | 'calendar' | 'wishlist' | 'settings'
+export type TabId = 'home' | 'closet' | 'routines' | 'finances' | 'habits' | 'calendar' | 'wishlist' | 'goals' | 'recipes' | 'settings'

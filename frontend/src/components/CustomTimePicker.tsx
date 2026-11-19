@@ -90,6 +90,7 @@ export default function CustomTimePicker({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
+        aria-label="Seleccionar hora de recordatorio"
         className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-sm font-semibold transition-all ${
           isOpen
             ? 'border-[#0084ff] ring-4 ring-[#0084ff]/10 bg-white dark:bg-slate-900 dark:border-[#0084ff]'
@@ -129,6 +130,8 @@ export default function CustomTimePicker({
               <button
                 type="button"
                 onClick={() => selectPeriod('AM')}
+                aria-pressed={selectedPeriod === 'AM'}
+                aria-label="Seleccionar período AM"
                 className={`rounded-lg px-2.5 py-1 text-xs font-bold transition-all ${
                   selectedPeriod === 'AM'
                     ? 'bg-[#0084ff] text-white shadow-xs'
@@ -140,6 +143,8 @@ export default function CustomTimePicker({
               <button
                 type="button"
                 onClick={() => selectPeriod('PM')}
+                aria-pressed={selectedPeriod === 'PM'}
+                aria-label="Seleccionar período PM"
                 className={`rounded-lg px-2.5 py-1 text-xs font-bold transition-all ${
                   selectedPeriod === 'PM'
                     ? 'bg-[#0084ff] text-white shadow-xs'
@@ -166,6 +171,8 @@ export default function CustomTimePicker({
                       key={h}
                       type="button"
                       onClick={() => selectHour(h)}
+                      aria-pressed={isSelected}
+                      aria-label={`Seleccionar hora ${h}`}
                       className={`flex items-center justify-center rounded-xl py-1.5 text-xs font-bold transition-all ${
                         isSelected
                           ? 'bg-[#0084ff] text-white shadow-xs'
@@ -192,6 +199,8 @@ export default function CustomTimePicker({
                       key={m}
                       type="button"
                       onClick={() => selectMinute(m)}
+                      aria-pressed={isSelected}
+                      aria-label={`Seleccionar minuto ${m}`}
                       className={`flex items-center justify-center rounded-xl py-1.5 text-xs font-bold transition-all ${
                         isSelected
                           ? 'bg-[#0084ff] text-white shadow-xs'
@@ -214,6 +223,7 @@ export default function CustomTimePicker({
                 onChange('')
                 setIsOpen(false)
               }}
+              aria-label="Borrar selección de hora"
               className="text-[11px] font-semibold text-slate-400 hover:text-rose-500 transition"
             >
               Borrar
@@ -221,6 +231,7 @@ export default function CustomTimePicker({
             <button
               type="button"
               onClick={() => setIsOpen(false)}
+              aria-label="Confirmar hora seleccionada"
               className="inline-flex items-center gap-1 rounded-xl bg-[#0084ff] px-3 py-1 text-xs font-bold text-white transition hover:bg-blue-600 shadow-xs active:scale-95"
             >
               <IoCheckmark size={14} />

@@ -19,6 +19,20 @@ frontend/.env.local
 # Build outputs
 frontend/dist/
 
+# Tests
+frontend/test-results/
+frontend/playwright-report/
+frontend/.playwright/
+backend/.pytest_cache/
+
+# iOS
+frontend/ios/App/Pods/
+frontend/ios/App/build/
+frontend/ios/DerivedData/
+frontend/ios/App/App.xcworkspace/xcuserdata/
+frontend/ios/App/App.xcodeproj/xcuserdata/
+*.xcuserstate
+
 # Android signing keys (never commit private keys)
 *.keystore
 *.jks

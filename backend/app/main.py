@@ -5,7 +5,19 @@ import sys
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import get_settings
-from app.api import health, images
+from app.api import (
+    calendar,
+    closet,
+    finances,
+    goals,
+    habits,
+    health,
+    images,
+    notifications,
+    recipes,
+    routines,
+    wishlist,
+)
 
 # Consolas de Windows (cp1252) no soportan emojis: forzar UTF-8 sin romper si falla
 try:
@@ -42,6 +54,15 @@ app.add_middleware(
 # Registrar routers
 app.include_router(health.router)
 app.include_router(images.router)
+app.include_router(goals.router)
+app.include_router(recipes.router)
+app.include_router(notifications.router)
+app.include_router(closet.router)
+app.include_router(routines.router)
+app.include_router(finances.router)
+app.include_router(habits.router)
+app.include_router(calendar.router)
+app.include_router(wishlist.router)
 
 
 @app.on_event("startup")

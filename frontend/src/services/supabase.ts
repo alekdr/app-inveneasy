@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import type { Recipe, RecipeLog, RecipeCategory, RecipeDifficulty } from '../types'
 
 const supabaseUrl =
   import.meta.env.VITE_SUPABASE_URL || 'https://wpanurtrwzenzembfivt.supabase.co'
@@ -520,4 +521,199 @@ export async function deleteHabit(habitId: string) {
 
   if (error) throw error
   return true
+}
+
+// ===== Servicios de Recetas =====
+
+export interface RecipeCreateInput {
+  title: string
+  description?: string
+  category?: RecipeCategory
+  difficulty?: RecipeDifficulty
+  prep_time_minutes?: number | null
+  cook_time_minutes?: number | null
+  servings?: number
+  ingredients?: Recipe['ingredients']
+  instructions?: string[]
+  image_url?: string
+  cloudinary_public_id?: string
+  tags?: string[]
+  is_favorite?: boolean
+  source_url?: string
+}
+
+export type RecipeUpdateInput = Partial<RecipeCreateInput>
+
+export async function fetchRecipes(filters?: {
+  category?: RecipeCategory
+  difficulty?: RecipeDifficulty
+  onlyFavorites?: boolean
+  search?: string
+}) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
+
+  let query = supabase
+    .from('recipes')
+    .select('*')
+    .eq('user_id', user.id)
+
+  if (filters?.category) query = query.eq('category', filters.category)
+  if (filters?.difficulty) query = query.eq('difficulty', filters.difficulty)
+  if (filters?.onlyFavorites) query = query.eq('is_favorite', true)
+
+  if (filters?.search?.trim()) {
+    const term = filters.search.trim().replace(/[%,]/g, '')
+    query = query.or(
+      `title.ilike.%${term}%,description.ilike.%${term}%`
+    )
+  }
+
+  const { data, error } = await query.order('created_at', { ascending: false })
+
+  if (error) throw error
+  return (data || []) as Recipe[]
+}
+
+export async function fetchRecipe(recipeId: string) {
+  const { data, error } = await supabase
+    .from('recipes')
+    .select('*')
+    .eq('id', recipeId)
+    .single()
+
+  if (error) throw error
+  return data as Recipe
+}
+
+export async function createRecipe(recipe: RecipeCreateInput) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Usuario no autenticado')
+
+  const { data, error } = await supabase
+    .from('recipes')
+    .insert({
+      user_id: user.id,
+      title: recipe.title,
+      description: recipe.description || null,
+      category: recipe.category || 'comida',
+      difficulty: recipe.difficulty || 'facil',
+      prep_time_minutes: recipe.prep_time_minutes ?? null,
+      cook_time_minutes: recipe.cook_time_minutes ?? null,
+      servings: recipe.servings || 1,
+      ingredients: recipe.ingredients || [],
+      instructions: recipe.instructions || [],
+      image_url: recipe.image_url || null,
+      cloudinary_public_id: recipe.cloudinary_public_id || null,
+      tags: recipe.tags || [],
+      is_favorite: recipe.is_favorite || false,
+      source_url: recipe.source_url || null,
+    })
+    .select()
+    .single()
+
+  if (error) throw error
+  return data as Recipe
+}
+
+export async function updateRecipe(recipeId: string, updates: RecipeUpdateInput) {
+  const { data, error } = await supabase
+    .from('recipes')
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq('id', recipeId)
+    .select()
+    .single()
+
+  if (error) throw error
+  return data as Recipe
+}
+
+export async function deleteRecipe(recipeId: string) {
+  const { error } = await supabase
+    .from('recipes')
+    .delete()
+    .eq('id', recipeId)
+
+  if (error) throw error
+  return true
+}
+
+export async function toggleRecipeFavorite(recipeId: string, isFavorite: boolean) {
+  return updateRecipe(recipeId, { is_favorite: isFavorite })
+}
+
+// ===== Historial de recetas cocinadas =====
+
+export async function cookRecipe(
+  recipeId: string,
+  log: { rating?: number | null; notes?: string | null; cooked_date?: string }
+) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Usuario no autenticado')
+
+  const { data, error } = await supabase
+    .from('recipe_logs')
+    .insert({
+      recipe_id: recipeId,
+      user_id: user.id,
+      cooked_date: log.cooked_date || new Date().toISOString().split('T')[0],
+      rating: log.rating ?? null,
+      notes: log.notes || null,
+    })
+    .select()
+    .single()
+
+  if (error) throw error
+  return data as RecipeLog
+}
+
+export async function fetchRecipeLogs(recipeId?: string) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
+
+  let query = supabase
+    .from('recipe_logs')
+    .select('*')
+    .eq('user_id', user.id)
+
+  if (recipeId) query = query.eq('recipe_id', recipeId)
+
+  const { data, error } = await query
+    .order('cooked_date', { ascending: false })
+    .limit(50)
+
+  if (error) throw error
+  return (data || []) as RecipeLog[]
+}
+
+export async function fetchRecipesStats() {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    return { total: 0, favorites: 0, cookedThisMonth: 0, byCategory: {} as Record<string, number> }
+  }
+
+  const [recipesRes, logsRes] = await Promise.all([
+    supabase.from('recipes').select('id, category, is_favorite').eq('user_id', user.id),
+    supabase
+      .from('recipe_logs')
+      .select('id, cooked_date')
+      .eq('user_id', user.id)
+      .gte('cooked_date', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]),
+  ])
+
+  if (recipesRes.error) throw recipesRes.error
+  if (logsRes.error) throw logsRes.error
+
+  const recipes = recipesRes.data || []
+  const byCategory: Record<string, number> = {}
+  for (const r of recipes) {
+    byCategory[r.category] = (byCategory[r.category] || 0) + 1
+  }
+
+  return {
+    total: recipes.length,
+    favorites: recipes.filter((r) => r.is_favorite).length,
+    cookedThisMonth: (logsRes.data || []).length,
+    byCategory,
+  }
 }

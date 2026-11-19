@@ -7,6 +7,8 @@ import {
   IoWalletOutline,
   IoFlameOutline,
   IoCheckboxOutline,
+  IoCalendarOutline,
+  IoStarOutline,
   IoArrowForward,
 } from 'react-icons/io5'
 import { supabase } from '../services/supabase'
@@ -15,7 +17,7 @@ interface SearchResult {
   id: string
   title: string
   subtitle?: string
-  section: 'armario' | 'finanzas' | 'habitos' | 'rutinas'
+  section: 'armario' | 'finanzas' | 'habitos' | 'rutinas' | 'calendario' | 'deseos'
   path: string
 }
 
@@ -24,6 +26,8 @@ const sectionConfig = {
   finanzas: { label: 'Finanzas', icon: <IoWalletOutline size={16} />, color: 'text-emerald-600 dark:text-emerald-400' },
   habitos: { label: 'Hábitos', icon: <IoFlameOutline size={16} />, color: 'text-amber-500' },
   rutinas: { label: 'Rutinas', icon: <IoCheckboxOutline size={16} />, color: 'text-sky-600 dark:text-sky-400' },
+  calendario: { label: 'Calendario', icon: <IoCalendarOutline size={16} />, color: 'text-amber-600 dark:text-amber-400' },
+  deseos: { label: 'Deseos', icon: <IoStarOutline size={16} />, color: 'text-yellow-500 dark:text-yellow-400' },
 }
 
 interface SpotlightSearchProps {
@@ -37,7 +41,6 @@ export default function SpotlightSearch({ isOpen, onClose }: SpotlightSearchProp
   const [loading, setLoading] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const navigate = useNavigate()
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   // Focus input on open
   useEffect(() => {
@@ -60,7 +63,7 @@ export default function SpotlightSearch({ isOpen, onClose }: SpotlightSearchProp
   }, [isOpen, onClose])
 
   const performSearch = useCallback(async (term: string) => {
-    if (!term || term.length < 2) {
+    if (!term || term.length < 1) {
       setResults([])
       return
     }
@@ -153,6 +156,46 @@ export default function SpotlightSearch({ isOpen, onClose }: SpotlightSearchProp
         })
       }
 
+      // 5. Buscar en calendar_events (calendario)
+      const { data: events } = await supabase
+        .from('calendar_events')
+        .select('id, title, description, event_date')
+        .eq('user_id', user.id)
+        .or(`title.ilike.${searchTerm},description.ilike.${searchTerm}`)
+        .limit(5)
+
+      if (events) {
+        events.forEach((e: any) => {
+          allResults.push({
+            id: `event-${e.id}`,
+            title: e.title,
+            subtitle: e.description ? `Fecha: ${e.event_date}` : undefined,
+            section: 'calendario',
+            path: '/calendar',
+          })
+        })
+      }
+
+      // 6. Buscar en wishlist_items (deseos)
+      const { data: wishlist } = await supabase
+        .from('wishlist_items')
+        .select('id, title, category, is_purchased')
+        .eq('user_id', user.id)
+        .or(`title.ilike.${searchTerm},category.ilike.${searchTerm}`)
+        .limit(5)
+
+      if (wishlist) {
+        wishlist.forEach((w: any) => {
+          allResults.push({
+            id: `wish-${w.id}`,
+            title: w.title,
+            subtitle: w.category || (w.is_purchased ? 'Comprado' : undefined),
+            section: 'deseos',
+            path: '/wishlist',
+          })
+        })
+      }
+
       setResults(allResults)
     } catch (err) {
       console.error('Search error:', err)
@@ -161,12 +204,18 @@ export default function SpotlightSearch({ isOpen, onClose }: SpotlightSearchProp
     }
   }, [])
 
-  // Debounced search
-  const handleQueryChange = (value: string) => {
-    setQuery(value)
-    if (debounceRef.current) clearTimeout(debounceRef.current)
-    debounceRef.current = setTimeout(() => performSearch(value), 300)
-  }
+  // Debounced search - 300ms after user stops typing
+  useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout> | undefined
+    if (query.length > 0) {
+      timeoutId = setTimeout(() => performSearch(query), 300)
+    } else {
+      setResults([])
+    }
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId)
+    }
+  }, [query, performSearch])
 
   const handleResultClick = (result: SearchResult) => {
     navigate(result.path)
@@ -195,8 +244,8 @@ export default function SpotlightSearch({ isOpen, onClose }: SpotlightSearchProp
             ref={inputRef}
             type="text"
             value={query}
-            onChange={(e) => handleQueryChange(e.target.value)}
-            placeholder="Buscar prendas, gastos, hábitos, rutinas..."
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Buscar prendas, gastos, hábitos, rutinas, calendario o deseos..."
             className="flex-1 bg-transparent text-sm font-medium text-slate-900 outline-none placeholder:text-slate-400 dark:text-white"
           />
           {query && (
@@ -214,11 +263,11 @@ export default function SpotlightSearch({ isOpen, onClose }: SpotlightSearchProp
             </div>
           )}
 
-          {!loading && query.length >= 2 && results.length === 0 && (
+          {!loading && results.length === 0 && query.trim().length > 0 && (
             <div className="flex flex-col items-center py-10 text-center">
               <IoSearchOutline size={32} className="text-slate-300 dark:text-slate-600 mb-2" />
               <p className="text-xs font-bold text-slate-500 dark:text-slate-400">Sin resultados para "{query}"</p>
-              <p className="text-[10px] text-slate-400 mt-1">Intenta con otra palabra clave</p>
+              <p className="text-[10px] text-slate-400 mt-1">Intenta con otra palabra clave o verifica la ortografía</p>
             </div>
           )}
 
@@ -250,10 +299,10 @@ export default function SpotlightSearch({ isOpen, onClose }: SpotlightSearchProp
             )
           })}
 
-          {!loading && query.length < 2 && (
+          {!loading && query.trim().length === 0 && (
             <div className="flex flex-col items-center py-10 text-center">
               <IoSearchOutline size={32} className="text-slate-200 dark:text-slate-700 mb-2" />
-              <p className="text-xs text-slate-400 font-medium">Escribe al menos 2 caracteres para buscar</p>
+              <p className="text-xs text-slate-400 font-medium">Empieza a escribir para buscar</p>
             </div>
           )}
         </div>

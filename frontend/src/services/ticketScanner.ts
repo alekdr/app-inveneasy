@@ -8,7 +8,7 @@ export interface ScannedTicket {
 }
 
 /** Extrae el total de un texto OCR de ticket/factura */
-function extractTotal(text: string): number | null {
+export function extractTotal(text: string): number | null {
   const lines = text.split('\n')
 
   // Patrones comunes en facturas colombianas / latinoamericanas
@@ -36,7 +36,7 @@ function extractTotal(text: string): number | null {
 }
 
 /** Extrae ítems individuales del texto OCR */
-function extractItems(text: string): Array<{ name: string; amount: number | null }> {
+export function extractItems(text: string): Array<{ name: string; amount: number | null }> {
   const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 2)
   const items: Array<{ name: string; amount: number | null }> = []
 

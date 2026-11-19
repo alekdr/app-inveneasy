@@ -1781,7 +1781,7 @@ export default function FinancesPage() {
 
       {/* Modal Scanner de Tickets */}
       {scannerOpen && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-xs animate-in fade-in sm:items-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs animate-in fade-in p-4">
           <div className="w-full max-w-sm rounded-3xl border border-slate-200/80 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-900 overflow-hidden max-h-[90vh] overflow-y-auto">
             {/* Header */}
             <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-slate-100 dark:border-slate-800">

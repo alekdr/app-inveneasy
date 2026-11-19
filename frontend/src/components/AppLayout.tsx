@@ -8,9 +8,11 @@ import {
   IoFlameOutline,
   IoCalendarOutline,
   IoHeartOutline,
+  IoFlagOutline,
   IoLogOutOutline,
   IoSettingsOutline,
   IoSearchOutline,
+  IoRestaurantOutline,
 } from 'react-icons/io5'
 import BottomTabBar from './BottomTabBar'
 import SpotlightSearch from './SpotlightSearch'
@@ -28,7 +30,9 @@ const navItems = [
   { path: '/finances', label: 'Finanzas', icon: <IoWalletOutline size={18} /> },
   { path: '/habits', label: 'Hábitos', icon: <IoFlameOutline size={18} /> },
   { path: '/calendar', label: 'Calendario', icon: <IoCalendarOutline size={18} /> },
+  { path: '/goals', label: 'Metas', icon: <IoFlagOutline size={18} /> },
   { path: '/wishlist', label: 'Deseos', icon: <IoHeartOutline size={18} /> },
+  { path: '/recipes', label: 'Recetas', icon: <IoRestaurantOutline size={18} /> },
   { path: '/settings', label: 'Configuración', icon: <IoSettingsOutline size={18} /> },
 ]
 
@@ -73,6 +77,11 @@ export default function AppLayout() {
       {/* Toast provider de Sonner */}
       <Toaster position="top-center" richColors theme="system" />
 
+      {/* Accesibilidad: saltar al contenido principal */}
+      <a href="#main-content" className="skip-link">
+        Saltar al contenido
+      </a>
+
       {/* ============================================================== */}
       {/* DESKTOP SIDEBAR                                                */}
       {/* ============================================================== */}
@@ -88,6 +97,17 @@ export default function AppLayout() {
                 (e.target as HTMLElement).style.display = 'none'
               }}
             />
+            <div>
+              {/* Botón de búsqueda en sidebar desktop */}
+              <button
+                onClick={() => setIsSpotlightOpen(true)}
+                className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                aria-label="Buscar en InvenEasy"
+                title="Buscar (Cmd+K / Ctrl+K)"
+              >
+                <IoSearchOutline size={16} className="text-slate-500 dark:text-slate-400" />
+              </button>
+            </div>
             <div>
               <h1 className="text-base font-bold tracking-tight text-slate-900 dark:text-white">
                 InvenEasy
@@ -168,43 +188,28 @@ export default function AppLayout() {
       {/* ============================================================== */}
       <div className="flex flex-1 flex-col min-w-0 overflow-x-hidden">
         {/* Top Navbar en Móvil */}
-        <header className="safe-top sticky top-0 z-40 flex h-14 items-center justify-between border-b border-[#eeece8] bg-white/80 px-4 backdrop-blur-xl md:hidden dark:border-[#222226] dark:bg-[#18181b]/80">
-          <div className="flex items-center gap-2.5">
-            <img src="/logo.png" alt="InvenEasy" className="h-7 w-7 rounded-lg object-contain" />
+        <header className="safe-top sticky top-0 z-40 border-b border-[#eeece8] bg-white/80 backdrop-blur-xl md:hidden dark:border-[#222226] dark:bg-[#18181b]/80">
+          <div className="flex h-14 items-center justify-center gap-2 px-4">
             <span className="text-sm font-bold tracking-tight text-slate-900 dark:text-white">
               InvenEasy
             </span>
-          </div>
-
-          <div className="flex items-center gap-1.5">
             <button
               onClick={() => setIsSpotlightOpen(true)}
-              className="rounded-xl p-1.5 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
-              title="Buscar en InvenEasy"
+              className="rounded-lg p-2 hover:bg-slate-100 transition dark:hover:bg-slate-800"
+              aria-label="Buscar en InvenEasy"
+              title="Buscar (Cmd+K / Ctrl+K)"
             >
-              <IoSearchOutline size={20} />
+              <IoSearchOutline size={18} className="text-slate-500 dark:text-slate-400" />
             </button>
-            {user ? (
-              <button
-                onClick={handleSignOut}
-                className="rounded-xl p-1.5 text-slate-400 hover:text-rose-500"
-                title="Cerrar sesión"
-              >
-                <IoLogOutOutline size={20} />
-              </button>
-            ) : (
-              <button
-                onClick={() => navigate('/auth')}
-                className="rounded-xl bg-slate-900 px-3 py-1.5 text-xs font-bold text-white dark:bg-white dark:text-slate-900"
-              >
-                Entrar
-              </button>
-            )}
           </div>
         </header>
 
         {/* Contenido Adaptativo */}
-        <main className="flex-1 px-4 py-5 md:px-8 md:py-8 lg:px-12 max-w-6xl w-full mx-auto pb-24 md:pb-10 min-w-0">
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className="pb-safe-tabbar flex-1 px-4 py-5 md:px-8 md:py-8 lg:px-12 max-w-6xl w-full mx-auto min-w-0"
+        >
           <Outlet />
         </main>
 
